@@ -1,0 +1,2164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>短视频剪辑教练 - 智能脚本生成 & 爆款分析</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --primary:#0075B3;--primary-light:#E8F4FC;
+      --black:#000000;--white:#FFFFFF;--ito-gray:#EDEFEA;
+      --dark:#1A1A1A;--gray-100:#F7F7F7;--gray-200:#E5E5E5;
+      --gray-400:#9CA3AF;--gray-600:#4B5563;--success:#10B981;--warning:#F59E0B;
+    }
+    body{font-family:'Noto Sans SC',-apple-system,sans-serif;background:var(--ito-gray);min-height:100vh;color:var(--black);font-weight:400;letter-spacing:.3px}
+    .container{max-width:1400px;margin:0 auto;padding:24px}
+    .header{text-align:center;padding:48px 20px 36px;color:var(--black)}
+    .header h1{font-size:2.2rem;font-weight:700;margin-bottom:8px;letter-spacing:1px}
+    .header p{font-size:.95rem;color:var(--gray-600);max-width:640px;margin:0 auto;font-weight:300}
+    .header .brand-tag{display:inline-block;margin-top:10px;padding:4px 16px;border:1px solid var(--primary);color:var(--primary);font-size:.75rem;font-weight:500;letter-spacing:1.5px;text-transform:uppercase}
+    .main-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:30px}
+    @media(max-width:1024px){.main-grid{grid-template-columns:1fr}}
+    .card{background:var(--white);border-radius:2px;border:1px solid var(--gray-200);overflow:hidden;transition:border-color .2s}
+    .card:hover{border-color:var(--primary)}
+    .card-header{background:var(--black);color:var(--white);padding:14px 24px;font-weight:500;font-size:.95rem;display:flex;align-items:center;gap:10px;letter-spacing:.5px}
+    .card-body{padding:28px}
+    .upload-area{border:1px solid var(--gray-200);border-radius:2px;padding:40px;text-align:center;transition:all .3s;cursor:pointer;background:var(--white)}
+    .upload-area:hover,.upload-area.dragover{border-color:var(--primary);background:var(--primary-light)}
+    .upload-icon{font-size:2.4rem;margin-bottom:12px}
+    .upload-text{font-size:.93rem;color:var(--gray-600);margin-bottom:8px;font-weight:400}
+    .upload-hint{font-size:.8rem;color:var(--gray-400)}
+    #videoInput{display:none}
+    .video-preview{margin-top:20px;border-radius:2px;overflow:hidden;display:none;border:1px solid var(--gray-200)}
+    .video-preview video{width:100%;max-height:280px;object-fit:cover}
+    .video-info{background:var(--gray-100);padding:12px 16px;font-size:.83rem;color:var(--gray-600)}
+    /* 视频智能分析面板 */
+    .video-analysis{margin-top:16px;display:none}
+    .video-analysis.show{display:block;animation:fadeIn .5s ease}
+    .analysis-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:1px;font-size:.8rem;font-weight:500;margin:3px 3px 3px 0;border:1px solid var(--gray-200);background:var(--white)}
+    .analysis-badge.blue{border-color:var(--primary);color:var(--primary)}
+    .analysis-badge.green{border-color:var(--success);color:var(--success)}
+    .analysis-badge.orange{border-color:var(--warning);color:#EA580C}
+    .analysis-badge.purple{border-color:#7C3AED;color:#7C3AED}
+    .analysis-suggest{margin-top:12px;padding:14px;background:var(--gray-100);border-left:3px solid var(--primary);border-radius:0;font-size:.85rem;line-height:1.7;color:var(--dark)}
+    .form-group{margin-bottom:24px}
+    .form-label{display:block;font-weight:500;margin-bottom:8px;color:var(--black);font-size:.9rem;letter-spacing:.3px}
+    .form-label .req{color:var(--primary);margin-left:4px}
+    .form-select,.form-input{width:100%;padding:10px 14px;border:1px solid var(--gray-200);border-radius:1px;font-size:.9rem;transition:all .2s;background:var(--white);font-family:inherit;color:var(--black);font-weight:400}
+    .form-select:focus,.form-input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(0,117,179,.08)}
+    /* 多选标签 */
+    .tag-area{margin-top:8px}
+    .tag-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+    .tag{padding:5px 14px;border-radius:1px;font-size:.82rem;cursor:pointer;transition:all .2s;border:1px solid var(--gray-200);background:var(--white);color:var(--gray-600);user-select:none;font-weight:400}
+    .tag:hover{border-color:var(--primary);color:var(--primary)}
+    .tag.selected{background:var(--black);color:var(--white);border-color:var(--black);font-weight:500}
+    .tag.custom-tag{border-style:dashed;border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+    .tag.custom-tag.selected{background:var(--primary);color:#fff;border-color:var(--primary)}
+    /* 自定义输入行 */
+    .custom-input-row{display:flex;gap:8px;margin-top:4px}
+    .custom-input-row input{flex:1;padding:7px 12px;border:1px solid var(--gray-200);border-radius:1px;font-size:.82rem;font-family:inherit;transition:all .2s}
+    .custom-input-row input:focus{outline:none;border-color:var(--primary)}
+    .custom-input-row input::placeholder{color:var(--gray-400)}
+    .add-btn{padding:7px 14px;background:var(--primary);color:#fff;border:none;border-radius:1px;font-size:.8rem;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit;font-weight:500}
+    .add-btn:hover{background:#005A8C}
+    /* 模板区域 */
+    .template-area{border:1px solid var(--gray-200);border-radius:1px;overflow:hidden}
+    .template-tabs{display:flex;background:var(--gray-100)}
+    .template-tab{flex:1;padding:10px;text-align:center;cursor:pointer;font-size:.85rem;font-weight:400;border:none;background:transparent;transition:all .2s;font-family:inherit;color:var(--gray-600);letter-spacing:.5px}
+    .template-tab.active{background:var(--white);color:var(--black);border-bottom:2px solid var(--black);font-weight:500}
+    .template-panel{padding:16px;display:none}
+    .template-panel.active{display:block}
+    .template-options{display:flex;flex-direction:column;gap:6px}
+    .template-option{padding:10px 14px;border:1px solid var(--gray-200);border-radius:1px;cursor:pointer;font-size:.88rem;transition:all .2s}
+    .template-option:hover{border-color:var(--primary);background:var(--primary-light)}
+    .template-option.selected{border-color:var(--black);background:var(--white);color:var(--black);font-weight:500}
+    .template-custom textarea{width:100%;border:1px solid var(--gray-200);border-radius:1px;padding:12px;font-size:.88rem;font-family:inherit;resize:vertical;min-height:100px;transition:all .2s}
+    .template-custom textarea:focus{outline:none;border-color:var(--primary)}
+    .template-custom .hint{font-size:.78rem;color:var(--gray-400);margin-top:6px}
+    /* 调性选择 */
+    .tone-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+    .tone-card{padding:14px;border:1px solid var(--gray-200);border-radius:1px;cursor:pointer;transition:all .2s;text-align:center}
+    .tone-card:hover{border-color:var(--primary)}
+    .tone-card.selected{border-color:var(--black);background:var(--white)}
+    .tone-card .emoji{font-size:1.4rem;margin-bottom:6px}
+    .tone-card .name{font-weight:500;font-size:.85rem;letter-spacing:.3px}
+    .tone-card .desc{font-size:.73rem;color:var(--gray-400);margin-top:3px}
+    /* 字数选择 */
+    .wordcount-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+    .wc-btn{padding:7px 16px;border:1px solid var(--gray-200);border-radius:1px;cursor:pointer;font-size:.85rem;background:var(--white);transition:all .2s;font-family:inherit;color:var(--gray-600);font-weight:400}
+    .wc-btn:hover{border-color:var(--primary);color:var(--primary)}
+    .wc-btn.selected{background:var(--black);color:#fff;border-color:var(--black);font-weight:500}
+    /* 卖点模块样式 */
+    .module-card{padding:10px 14px;border:1px solid var(--gray-200);border-radius:1px;cursor:pointer;transition:all .2s;margin-bottom:5px}
+    .module-card:hover{border-color:var(--primary);background:var(--primary-light)}
+    .module-card.selected{border-color:var(--black);background:var(--white);font-weight:500}
+    .module-card .mod-num{display:inline-block;width:22px;height:22px;line-height:22px;text-align:center;background:var(--black);color:#fff;border-radius:1px;font-size:.72rem;margin-right:8px;font-weight:500}
+    .module-card.selected .mod-num{background:var(--primary)}
+    .module-card .mod-title{font-weight:500;font-size:.88rem}
+    .module-card .mod-desc{font-size:.76rem;color:var(--gray-400);margin-top:2px}
+    /* 人群画像卡片 */
+    .persona-card{padding:10px 14px;border:1px solid var(--gray-200);border-radius:1px;cursor:pointer;transition:all .2s;margin-bottom:5px}
+    .persona-card:hover{border-color:var(--primary)}
+    .persona-card.selected{border-color:var(--black);background:var(--white)}
+    .persona-card .p-name{font-weight:500;font-size:.88rem}
+    .persona-card .p-desc{font-size:.76rem;color:var(--gray-400);margin-top:2px}
+    .persona-card .p-sellpoints{font-size:.73rem;color:var(--primary);margin-top:4px}
+    /* 生成按钮 */
+    .generate-btn{width:100%;padding:14px;background:var(--black);color:#fff;border:none;border-radius:1px;font-size:.95rem;font-weight:500;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:24px;font-family:inherit;letter-spacing:1px}
+    .generate-btn:hover{background:var(--primary);transform:translateY(-1px)}
+    .generate-btn:disabled{background:var(--gray-400);cursor:not-allowed;transform:none}
+    .spinner{width:18px;height:18px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    /* 结果区域 */
+    .result-section{display:none}
+    .result-section.show{display:block;animation:fadeIn .5s ease}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    .result-card{background:var(--white);border-radius:2px;border:1px solid var(--gray-200);overflow:hidden}
+    .result-header{background:var(--black);color:#fff;padding:18px 24px;display:flex;justify-content:space-between;align-items:center}
+    .result-header h2{font-size:1rem;display:flex;align-items:center;gap:10px;font-weight:500;letter-spacing:.5px}
+    .copy-btn{padding:7px 16px;background:transparent;border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:1px;cursor:pointer;font-size:.82rem;transition:all .2s;font-family:inherit;font-weight:400}
+    .copy-btn:hover{background:rgba(255,255,255,.1);border-color:#fff}
+    .result-body{padding:28px}
+    .analysis-panel{background:var(--gray-100);border-left:3px solid var(--primary);border-radius:0;padding:20px;margin-bottom:24px}
+    .analysis-title{font-weight:500;color:var(--black);margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:.92rem}
+    .analysis-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+    .analysis-item{background:#fff;padding:10px 12px;border-radius:1px;border:1px solid var(--gray-200);display:flex;align-items:center;gap:8px}
+    .analysis-item .icon{font-size:1.1rem}
+    .analysis-item .label{font-size:.73rem;color:var(--gray-400)}
+    .analysis-item .value{font-weight:500;color:var(--black);font-size:.85rem;word-break:break-all}
+    .style-rec{margin-bottom:24px;padding:20px;background:var(--primary-light);border-left:3px solid var(--primary);border-radius:0}
+    .style-rec-title{font-weight:500;color:var(--black);margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:.92rem}
+    .script-block{margin-bottom:20px}
+    .block-title{font-size:.8rem;font-weight:500;color:var(--gray-600);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+    .block-content{background:var(--gray-100);padding:16px 20px;border-radius:1px;font-size:.95rem;line-height:1.8;color:var(--black);border-left:3px solid var(--primary);white-space:pre-wrap;font-weight:400}
+    .block-content.hook{font-size:1.1rem;font-weight:500;color:var(--black)}
+    .cta-options{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+    @media(max-width:768px){.cta-options{grid-template-columns:1fr}}
+    .cta-option{background:var(--white);padding:10px;border-radius:1px;text-align:center;font-size:.85rem;cursor:pointer;transition:all .2s;border:1px solid var(--gray-200);font-weight:400}
+    .cta-option:hover{border-color:var(--primary);background:var(--primary-light)}
+    /* 字幕时间轴 */
+    .subtitle-wrap{background:var(--black);border-radius:2px;padding:20px;margin-top:16px}
+    .subtitle-title{color:var(--gray-400);font-size:.82rem;margin-bottom:14px;letter-spacing:.5px}
+    .subtitle-list{display:flex;flex-direction:column;gap:6px}
+    .sub-item{display:flex;align-items:flex-start;gap:12px}
+    .sub-time{color:var(--gray-400);font-size:.75rem;font-family:monospace;min-width:48px;padding-top:8px}
+    .sub-text{background:rgba(255,255,255,.08);padding:8px 14px;border-radius:1px;color:#fff;font-size:.9rem;flex:1;line-height:1.6;font-weight:300}
+    /* SOP参考 */
+    .sop-section{background:#fff;border-radius:2px;padding:24px;margin-top:24px;border:1px solid var(--gray-200)}
+    .sop-title{font-size:.95rem;font-weight:500;margin-bottom:16px;display:flex;align-items:center;gap:10px;letter-spacing:.3px}
+    .sop-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px}
+    .sop-step{padding:14px;background:var(--gray-100);border-radius:1px;border-left:3px solid var(--primary)}
+    .sop-step h4{font-size:.9rem;margin-bottom:4px;font-weight:500}
+    .sop-step p{font-size:.8rem;color:var(--gray-600);line-height:1.5;font-weight:300}
+    /* 技巧区 */
+    .tips-section{background:#fff;border-radius:2px;padding:24px;margin-top:24px;border:1px solid var(--gray-200)}
+    .tips-title{font-size:.95rem;font-weight:500;margin-bottom:16px;display:flex;align-items:center;gap:10px;letter-spacing:.3px}
+    .tips-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+    .tip-card{padding:14px;background:var(--gray-100);border-radius:1px;border-left:3px solid var(--primary)}
+    .tip-card h4{font-size:.9rem;margin-bottom:4px;font-weight:500}
+    .tip-card p{font-size:.8rem;color:var(--gray-600);line-height:1.5;font-weight:300}
+    /* Toast */
+    .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--black);color:#fff;padding:10px 24px;border-radius:1px;font-size:.88rem;opacity:0;transition:all .3s;z-index:9999;font-weight:400;letter-spacing:.3px}
+    .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+    /* 字数指示器 */
+    .char-counter{font-size:.76rem;color:var(--gray-400);margin-top:6px;text-align:right;font-weight:400}
+    .char-counter.warning{color:var(--warning)}
+    .char-counter.ok{color:var(--primary)}
+    /* 产品选择 */
+    .product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}
+    .product-card{padding:12px;border:1px solid var(--gray-200);border-radius:1px;cursor:pointer;transition:all .2s;text-align:center}
+    .product-card:hover{border-color:var(--primary)}
+    .product-card.selected{border-color:var(--black);background:var(--white)}
+    .product-card .p-emoji{font-size:1.4rem}
+    .product-card .p-name{font-weight:500;font-size:.85rem;margin-top:4px;letter-spacing:.3px}
+    /* ========== 模式切换 ========== */
+    .mode-tabs{display:flex;gap:0;margin-bottom:24px;border:1px solid var(--gray-200);border-radius:1px;overflow:hidden;background:var(--white)}
+    .mode-tab{flex:1;padding:14px;text-align:center;cursor:pointer;font-size:.95rem;font-weight:400;background:var(--white);border:none;transition:all .2s;font-family:inherit;color:var(--gray-600);letter-spacing:1px}
+    .mode-tab.active{background:var(--black);color:#fff;font-weight:500}
+    .mode-tab:hover:not(.active){background:var(--gray-100)}
+    .mode-panel{display:none}
+    .mode-panel.active{display:block}
+    /* ========== 爆款分析 ========== */
+    .analysis-input-section{background:var(--white);border-radius:2px;border:1px solid var(--gray-200);overflow:hidden;margin-bottom:20px}
+    .analysis-input-header{background:var(--black);color:#fff;padding:14px 24px;font-weight:500;font-size:.95rem;display:flex;align-items:center;gap:10px;letter-spacing:.5px}
+    .analysis-input-body{padding:24px}
+    .link-input-row{display:flex;gap:8px;margin-bottom:12px}
+    .link-input-row input{flex:1;padding:10px 14px;border:1px solid var(--gray-200);border-radius:1px;font-size:.9rem;font-family:inherit;color:var(--black);transition:all .2s}
+    .link-input-row input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 2px rgba(0,117,179,.08)}
+    .link-input-row input::placeholder{color:var(--gray-400)}
+    .analyze-btn{padding:10px 24px;background:var(--black);color:#fff;border:none;border-radius:1px;font-size:.9rem;cursor:pointer;white-space:nowrap;transition:all .2s;font-family:inherit;font-weight:500}
+    .analyze-btn:hover{background:var(--primary)}
+    .analyze-btn:disabled{background:var(--gray-400);cursor:not-allowed}
+    .manual-input-area{margin-top:16px}
+    .manual-input-area textarea{width:100%;border:1px solid var(--gray-200);border-radius:1px;padding:12px;font-size:.88rem;font-family:inherit;resize:vertical;min-height:120px;transition:all .2s;line-height:1.6}
+    .manual-input-area textarea:focus{outline:none;border-color:var(--primary)}
+    .manual-input-area .hint{font-size:.78rem;color:var(--gray-400);margin-top:6px}
+    /* 分析报告 */
+    .report-card{background:var(--white);border-radius:2px;border:1px solid var(--gray-200);overflow:hidden;margin-bottom:20px}
+    .report-header{background:var(--black);color:#fff;padding:14px 24px;font-weight:500;font-size:.95rem;display:flex;align-items:center;gap:10px}
+    .report-body{padding:24px}
+    .report-body h3{font-size:.95rem;font-weight:500;margin-bottom:12px;color:var(--black);display:flex;align-items:center;gap:8px}
+    .report-body h3:not(:first-child){margin-top:20px}
+    .metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+    .metric-item{padding:10px 12px;background:var(--gray-100);border-radius:1px;text-align:center}
+    .metric-item .m-label{font-size:.73rem;color:var(--gray-400);margin-bottom:4px}
+    .metric-item .m-value{font-size:1.1rem;font-weight:500;color:var(--black)}
+    .metric-item .m-value.red{color:#DC2626}
+    .metric-item .m-value.green{color:#059669}
+    .metric-item .m-value.blue{color:var(--primary)}
+    /* 黄金3秒分析 */
+    .hook-analysis{padding:16px;background:var(--gray-100);border-left:3px solid var(--primary);border-radius:0;margin-top:8px}
+    .hook-type{display:inline-block;padding:4px 12px;background:var(--black);color:#fff;border-radius:1px;font-size:.78rem;font-weight:500;margin-right:6px}
+    .hook-desc{margin-top:8px;font-size:.88rem;line-height:1.7;color:var(--dark)}
+    /* 情绪曲线 */
+    .emotion-curve{margin-top:8px;position:relative;height:120px;background:var(--gray-100);border-radius:1px;padding:10px;overflow:hidden}
+    .emotion-curve svg{width:100%;height:100%}
+    /* 文案金句 */
+    .golden-quote{padding:10px 14px;background:var(--gray-100);border-left:3px solid var(--primary);margin:6px 0;border-radius:0;font-size:.88rem;line-height:1.6;color:var(--dark)}
+    .golden-quote .gq-tag{display:inline-block;padding:2px 8px;background:var(--primary-light);color:var(--primary);font-size:.72rem;border-radius:1px;margin-right:6px;font-weight:500}
+    /* 爆款要素标签 */
+    .factor-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+    .factor-tag{padding:5px 14px;border-radius:1px;font-size:.82rem;border:1px solid var(--primary);color:var(--primary);background:var(--primary-light);font-weight:400}
+    /* 创作引导 */
+    .create-guide{padding:20px;background:var(--gray-100);border-left:3px solid var(--black);border-radius:0;margin-top:12px}
+    .create-guide h4{font-size:.9rem;font-weight:500;margin-bottom:8px}
+    .create-guide p{font-size:.85rem;line-height:1.7;color:var(--gray-600)}
+    /* 标题候选 */
+    .title-candidate{padding:12px 16px;border:1px solid var(--gray-200);border-radius:1px;margin:6px 0;cursor:pointer;transition:all .2s;display:flex;align-items:flex-start;gap:10px}
+    .title-candidate:hover{border-color:var(--primary);background:var(--primary-light)}
+    .title-candidate.selected{border-color:var(--black);background:var(--white)}
+    .title-candidate .tc-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:var(--black);color:#fff;border-radius:1px;font-size:.72rem;font-weight:500;flex-shrink:0}
+    .title-candidate .tc-content{flex:1}
+    .title-candidate .tc-title{font-size:.9rem;font-weight:500;color:var(--black)}
+    .title-candidate .tc-meta{font-size:.75rem;color:var(--gray-400);margin-top:4px}
+    .title-candidate .tc-reason{font-size:.78rem;color:var(--primary);margin-top:2px}
+    /* 分镜脚本表 */
+    .storyboard-table{width:100%;border-collapse:collapse;margin-top:8px;font-size:.82rem}
+    .storyboard-table th{background:var(--black);color:#fff;padding:8px 10px;text-align:left;font-weight:500;white-space:nowrap}
+    .storyboard-table td{padding:8px 10px;border-bottom:1px solid var(--gray-200);vertical-align:top;line-height:1.5}
+    .storyboard-table tr:hover td{background:var(--gray-100)}
+    /* 导入按钮 */
+    .import-btn{padding:10px 24px;background:var(--primary);color:#fff;border:none;border-radius:1px;font-size:.88rem;cursor:pointer;transition:all .2s;font-family:inherit;font-weight:500;display:inline-flex;align-items:center;gap:8px}
+    .import-btn:hover{background:#005A8C}
+    /* 结构模型标签 */
+    .structure-model{display:inline-block;padding:4px 12px;background:var(--primary-light);color:var(--primary);border-radius:1px;font-size:.82rem;font-weight:500;margin-right:6px}
+    .structure-step{padding:8px 12px;background:var(--gray-100);border-left:3px solid var(--primary);margin:4px 0;border-radius:0;font-size:.85rem}
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <header class="header">
+    <h1>短视频剪辑教练</h1>
+    <p>上传视频 · 爆款分析 · 自动生成匹配调性的口播脚本与字幕建议</p>
+    <div class="brand-tag">ITO Brand Identity Guidelines</div>
+  </header>
+
+  <!-- 模式切换 -->
+  <div class="mode-tabs">
+    <div class="mode-tab active" data-mode="script">📝 脚本生成</div>
+    <div class="mode-tab" data-mode="analysis">🔍 爆款分析</div>
+  </div>
+
+  <!-- ========== 脚本生成模式 ========== -->
+  <div class="mode-panel active" id="panel-script">
+
+  <!-- Main Grid -->
+  <div class="main-grid">
+
+    <!-- 左：视频上传 -->
+    <div class="card">
+      <div class="card-header"><span>📹</span> 视频上传与智能分析</div>
+      <div class="card-body">
+        <div class="upload-area" id="uploadArea">
+          <div class="upload-icon">🎥</div>
+          <div class="upload-text">点击或拖拽上传视频</div>
+          <div class="upload-hint">支持 MP4、MOV、AVI 格式，建议时长 15-60 秒</div>
+        </div>
+        <input type="file" id="videoInput" accept="video/*">
+        <div class="video-preview" id="videoPreview">
+          <video id="previewVideo" controls></video>
+          <div class="video-info" id="videoInfo"></div>
+        </div>
+        <!-- 视频智能分析结果 -->
+        <div class="video-analysis" id="videoAnalysis">
+          <div class="form-label" style="margin-top:8px">🔍 智能分析结果</div>
+          <div id="analysisBadges" style="margin-top:8px"></div>
+          <div class="analysis-suggest" id="analysisSuggest"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 右：脚本配置 -->
+    <div class="card">
+      <div class="card-header"><span>⚙️</span> 脚本配置（SOP驱动）</div>
+      <div class="card-body" style="max-height:800px;overflow-y:auto">
+
+        <!-- 步骤1：选择产品 -->
+        <div class="form-group">
+          <label class="form-label">步骤1｜选择产品 <span class="req">*</span></label>
+          <div class="product-grid" id="productGrid">
+            <div class="product-card selected" data-product="T2" data-name="ITO 空气感双肩包二代（T2）">
+              <div class="p-emoji">🎒</div>
+              <div class="p-name">空气感双肩包 T2</div>
+            </div>
+            <div class="product-card" data-product="开心果" data-name="ITO 开心果行李箱二代">
+              <div class="p-emoji">🧳</div>
+              <div class="p-name">开心果行李箱二代</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 脚本模板 -->
+        <div class="form-group">
+          <label class="form-label">步骤2｜脚本模板 <span class="req">*</span></label>
+          <div class="template-area">
+            <div class="template-tabs">
+              <button class="template-tab active" data-panel="preset">选择现有模板</button>
+              <button class="template-tab" data-panel="custom">自定义模板</button>
+            </div>
+            <div class="template-panel active" id="panel-preset">
+              <div class="template-options" id="templateOptions">
+                <div class="template-option selected" data-value="template1" data-desc="场景 → 卖点 → CTA">
+                  <strong>模板1：</strong>场景 → 卖点 → CTA<br>
+                  <small style="color:#9CA3AF">偏种草、轻体验、上来就代入生活感</small>
+                </div>
+                <div class="template-option" data-value="template2" data-desc="痛点 → 对比 → 解决方案">
+                  <strong>模板2：</strong>痛点 → 对比 → 解决方案<br>
+                  <small style="color:#9CA3AF">通勤/出行/找物效率/好打理类</small>
+                </div>
+                <div class="template-option" data-value="template3" data-desc="反转式（先抑后扬）">
+                  <strong>模板3：</strong>反转式（先抑后扬）<br>
+                  <small style="color:#9CA3AF">旧包吐槽、前后反差、情绪更强</small>
+                </div>
+                <div class="template-option" data-value="template4" data-desc="教程式（干货攻略）">
+                  <strong>模板4：</strong>教程式（干货攻略）<br>
+                  <small style="color:#9CA3AF">讲标准、讲选择逻辑、偏理性推荐</small>
+                </div>
+                <div class="template-option" data-value="template5" data-desc="尺寸选择 → 卖点 → 适配人群">
+                  <strong>模板5：</strong>尺寸选择 → 卖点 → 适配人群<br>
+                  <small style="color:#9CA3AF">容量推荐、不同人群匹配、带尺寸决策</small>
+                </div>
+              </div>
+            </div>
+            <div class="template-panel" id="panel-custom">
+              <div class="template-custom">
+                <textarea id="customTemplateInput" placeholder="请输入你的自定义模板结构，例如：&#10;开头：[痛苦场景描述]&#10;中间：[产品亮点展示] → [真实体验分享]&#10;结尾：[情感共鸣] + [CTA引导]&#10;&#10;支持占位符：[产品][人群][场景][痛点][卖点][情绪][活动][开场][简称][动词]&#10;[简称]=包/箱子 [动词]=背/用 自动适配产品"></textarea>
+                <div class="hint">💡 可以描述结构框架，也可以写具体的开场白或关键词提示</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 目标人群（SOP人群画像） -->
+        <div class="form-group">
+          <label class="form-label">步骤3｜目标人群 <span class="req">*</span>（SOP人群画像，含推荐卖点）</label>
+          <div id="personaList"></div>
+          <div class="custom-input-row" style="margin-top:8px">
+            <input type="text" id="personaCustomInput" placeholder="输入自定义人群，按回车添加">
+            <button class="add-btn" onclick="addCustomPersona()">+ 添加</button>
+          </div>
+        </div>
+
+        <!-- 使用场景 -->
+        <div class="form-group">
+          <label class="form-label">步骤3｜使用场景 <span class="req">*</span>（可多选，可自定义添加）</label>
+          <div class="tag-area">
+            <div class="tag-row" id="sceneTags"></div>
+            <div class="custom-input-row">
+              <input type="text" id="sceneCustomInput" placeholder="输入自定义场景，按回车或点击添加">
+              <button class="add-btn" onclick="addCustomTag('scene')">+ 添加</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 核心痛点 -->
+        <div class="form-group">
+          <label class="form-label">步骤3｜核心痛点 <span class="req">*</span>（可多选，最多2个，可自定义添加）</label>
+          <div class="tag-area">
+            <div class="tag-row" id="painTags"></div>
+            <div class="custom-input-row">
+              <input type="text" id="painCustomInput" placeholder="输入自定义痛点，按回车或点击添加">
+              <button class="add-btn" onclick="addCustomTag('pain')">+ 添加</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 卖点模块（SOP编号体系） -->
+        <div class="form-group">
+          <label class="form-label">步骤3｜卖点模块 <span class="req">*</span>（选2-3个，可自定义添加）</label>
+          <div id="moduleList"></div>
+          <div class="custom-input-row" style="margin-top:8px">
+            <input type="text" id="moduleCustomInput" placeholder="输入自定义卖点模块，按回车添加">
+            <button class="add-btn" onclick="addCustomModule()">+ 添加</button>
+          </div>
+        </div>
+
+        <!-- 情绪关键词 -->
+        <div class="form-group">
+          <label class="form-label">步骤3｜情绪关键词 <span class="req">*</span>（可多选，可自定义添加）</label>
+          <div class="tag-area">
+            <div class="tag-row" id="emotionTags"></div>
+            <div class="custom-input-row">
+              <input type="text" id="emotionCustomInput" placeholder="输入自定义情绪词，按回车或点击添加">
+              <button class="add-btn" onclick="addCustomTag('emotion')">+ 添加</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 活动/价格机制 -->
+        <div class="form-group">
+          <label class="form-label">活动/价格机制</label>
+          <input type="text" class="form-input" id="activityInput" placeholder="例如：下单就送180天无忧换新+包包清洁剂" value="下单就送180天无忧换新+包包清洁剂">
+        </div>
+
+        <!-- 视频调性 -->
+        <div class="form-group">
+          <label class="form-label">视频调性 <span class="req">*</span></label>
+          <div class="tone-grid" id="toneGrid">
+            <div class="tone-card selected" data-tone="轻熟质感">
+              <div class="emoji">✨</div>
+              <div class="name">轻熟质感</div>
+              <div class="desc">真实体验、生活方式种草</div>
+            </div>
+            <div class="tone-card" data-tone="活力青春">
+              <div class="emoji">🔥</div>
+              <div class="name">活力青春</div>
+              <div class="desc">节奏快、情绪饱满</div>
+            </div>
+            <div class="tone-card" data-tone="专业靠谱">
+              <div class="emoji">📊</div>
+              <div class="name">专业靠谱</div>
+              <div class="desc">数据说话、理性分析</div>
+            </div>
+            <div class="tone-card" data-tone="温暖治愈">
+              <div class="emoji">💝</div>
+              <div class="name">温暖治愈</div>
+              <div class="desc">情感共鸣、故事感强</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 字数要求 -->
+        <div class="form-group">
+          <label class="form-label">字数要求（严格按此生成口播脚本）</label>
+          <div class="wordcount-btns" id="wordCountBtns">
+            <button class="wc-btn" data-count="60">约60字<br><small>超短款·15秒</small></button>
+            <button class="wc-btn" data-count="80">约80字<br><small>快节奏·20秒</small></button>
+            <button class="wc-btn selected" data-count="100">约100字<br><small>标准款·30秒</small></button>
+            <button class="wc-btn" data-count="150">约150字<br><small>详细款·45秒</small></button>
+            <button class="wc-btn" data-count="200">约200字<br><small>深度款·60秒</small></button>
+          </div>
+        </div>
+
+        <button class="generate-btn" id="generateBtn">
+          <span>🚀</span> 生成智能脚本
+        </button>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 结果区域 -->
+  <div class="result-section" id="resultSection">
+    <div class="result-card" id="resultCard">
+      <div class="result-header">
+        <h2><span>✅</span> 脚本生成完成</h2>
+        <button class="copy-btn" id="copyBtn">📋 复制全部</button>
+      </div>
+      <div class="result-body">
+
+        <div class="analysis-panel">
+          <div class="analysis-title"><span>📊</span> 配置概览</div>
+          <div class="analysis-items" id="analysisItems"></div>
+        </div>
+
+        <div class="style-rec">
+          <div class="style-rec-title"><span>🎨</span> 调性匹配建议</div>
+          <div id="styleContent" style="font-size:.93rem;line-height:1.7;color:var(--dark)"></div>
+        </div>
+
+        <div class="script-block">
+          <div class="block-title"><span>📝</span> 使用模板</div>
+          <div class="block-content" id="templateResult"></div>
+        </div>
+
+        <div class="script-block">
+          <div class="block-title"><span>🎣</span> 开头钩子（前3秒）</div>
+          <div class="block-content hook" id="hookResult"></div>
+        </div>
+
+        <div class="script-block">
+          <div class="block-title"><span>🎤</span> 口播脚本</div>
+          <div class="block-content" id="scriptResult"></div>
+          <div class="char-counter" id="charCounter"></div>
+        </div>
+
+        <div class="script-block">
+          <div class="block-title"><span>🎯</span> 结尾CTA备选（点击复制）</div>
+          <div class="cta-options" id="ctaResult"></div>
+        </div>
+
+        <div class="subtitle-wrap">
+          <div class="subtitle-title">💬 字幕时间轴建议</div>
+          <div class="subtitle-list" id="subtitleList"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- SOP工作流参考 -->
+  <div class="sop-section">
+    <div class="sop-title"><span>📋</span> 脚本SOP工作流参考</div>
+    <div class="sop-steps">
+      <div class="sop-step"><h4>步骤1｜选组合</h4><p>从脚本库选择产品+卖点+人群+场景组合，确定核心卖点≤3个</p></div>
+      <div class="sop-step"><h4>步骤2｜选结构</h4><p>从脚本模板库选结构（2分钟），确定用哪种叙事方式</p></div>
+      <div class="sop-step"><h4>步骤3｜选词</h4><p>人群+场景（1组）、痛点（1-2个）、模块卖点（2-3个）、情绪词（1-2个）</p></div>
+      <div class="sop-step"><h4>步骤4｜拼脚本</h4><p>把"模块露出点"按顺序塞进模板，先舒适→再快取→再好打理（10-15分钟/条）</p></div>
+      <div class="sop-step"><h4>步骤5｜快速变体</h4><p>换人群/换场景/换模块组合，同一产品快速产出多条脚本</p></div>
+      <div class="sop-step"><h4>爆款迭代</h4><p>找同品类近7-30天爆款素材拆解框架，主卖点固定，替换次卖点/人群/场景</p></div>
+    </div>
+  </div>
+
+  </div><!-- /mode-panel script -->
+
+  <!-- ========== 爆款分析模式 ========== -->
+  <div class="mode-panel" id="panel-analysis">
+
+    <!-- 输入区 -->
+    <div class="analysis-input-section">
+      <div class="analysis-input-header"><span>🔍</span> 爆款视频分析</div>
+      <div class="analysis-input-body">
+        <div class="link-input-row">
+          <input type="text" id="douyinLinkInput" placeholder="粘贴抖音视频链接（v.douyin.com / www.douyin.com/video/）">
+          <button class="analyze-btn" id="analyzeLinkBtn">解析链接</button>
+        </div>
+        <div style="text-align:center;color:var(--gray-400);font-size:.82rem;margin:12px 0">—— 或手动输入视频信息 ——</div>
+        <div class="manual-input-area">
+          <textarea id="manualAnalysisInput" placeholder="请粘贴/输入视频文案或字幕内容，用于爆款分析。&#10;&#10;例如：&#10;「你是不是每次出差箱子都塞不下？这款ITO开心果行李箱，扩容设计装超多，万向轮推着丝滑安静，硬壳防摔……」&#10;&#10;也可补充以下信息（可选）：&#10;· 点赞数 / 评论数 / 收藏数 / 转发数&#10;· 发布账号 / 发布时间&#10;· 热门评论（前3-5条）"></textarea>
+          <div class="hint">💡 输入越详细，分析越精准。至少提供视频文案/字幕内容。</div>
+        </div>
+        <button class="generate-btn" id="startAnalysisBtn" style="margin-top:16px">
+          <span>🔍</span> 开始爆款分析
+        </button>
+      </div>
+    </div>
+
+    <!-- 分析报告区（动态生成） -->
+    <div id="analysisReportSection" style="display:none">
+
+      <!-- 1. 数据概览 -->
+      <div class="report-card">
+        <div class="report-header"><span>📊</span> 数据概览</div>
+        <div class="report-body">
+          <div class="metric-grid" id="reportMetrics"></div>
+        </div>
+      </div>
+
+      <!-- 2. 黄金3秒分析 -->
+      <div class="report-card">
+        <div class="report-header"><span>🎣</span> 黄金3秒分析</div>
+        <div class="report-body" id="reportHook"></div>
+      </div>
+
+      <!-- 3. 内容结构拆解 -->
+      <div class="report-card">
+        <div class="report-header"><span>📐</span> 内容结构拆解</div>
+        <div class="report-body" id="reportStructure"></div>
+      </div>
+
+      <!-- 4. 文案金句 -->
+      <div class="report-card">
+        <div class="report-header"><span>✨</span> 文案金句提取</div>
+        <div class="report-body" id="reportQuotes"></div>
+      </div>
+
+      <!-- 5. 情绪曲线 -->
+      <div class="report-card">
+        <div class="report-header"><span>💭</span> 情绪曲线分析</div>
+        <div class="report-body" id="reportEmotion"></div>
+      </div>
+
+      <!-- 6. 画面与节奏 -->
+      <div class="report-card">
+        <div class="report-header"><span>🎬</span> 画面与节奏</div>
+        <div class="report-body" id="reportVisual"></div>
+      </div>
+
+      <!-- 7. 爆款成功要素 -->
+      <div class="report-card">
+        <div class="report-header"><span>🎯</span> 爆款成功要素</div>
+        <div class="report-body" id="reportFactors"></div>
+      </div>
+
+      <!-- 8. 创作引导 -->
+      <div class="report-card">
+        <div class="report-header"><span>🚀</span> 爆款创作引导</div>
+        <div class="report-body" id="reportGuide"></div>
+      </div>
+
+      <!-- 一键导入脚本生成 -->
+      <div style="text-align:center;padding:24px 0">
+        <button class="import-btn" id="importToScriptBtn">
+          <span>📝</span> 将分析结果导入脚本生成
+        </button>
+        <div style="font-size:.8rem;color:var(--gray-400);margin-top:8px">自动提取钩子类型、卖点、情绪词等，填入脚本配置</div>
+      </div>
+
+    </div>
+
+  </div><!-- /mode-panel analysis -->
+
+  <!-- 剪辑技巧 -->
+  <div class="tips-section">
+    <div class="tips-title"><span>💡</span> 剪辑技巧小贴士</div>
+    <div class="tips-grid">
+      <div class="tip-card"><h4>🎬 前三秒法则</h4><p>视频前3秒决定用户是否停留。用强视觉冲击或悬念钩子抓住注意力，避免平淡开场。</p></div>
+      <div class="tip-card"><h4>✂️ 节奏把控</h4><p>每3-5秒切换画面或添加转场，保持视觉新鲜感。口播与画面要同步，避免音画脱节。</p></div>
+      <div class="tip-card"><h4>📝 字幕设计</h4><p>关键词用高亮色标注，字号要足够大（手机观看）。每行不超过12个字，停留2-3秒。</p></div>
+      <div class="tip-card"><h4>🎵 背景音乐</h4><p>选择与调性匹配的音乐。轻熟质感选Lo-fi/爵士，活力青春选电子/流行，音量低于人声。</p></div>
+      <div class="tip-card"><h4>🎯 CTA设计</h4><p>行动号召不要太硬，用"顺便提醒"、"悄悄说"等软化表达，配合手势或箭头引导。</p></div>
+      <div class="tip-card"><h4>📱 竖屏适配</h4><p>核心内容放在画面中间安全区（上下各留10%），避免被抖音/快手的UI遮挡重要信息。</p></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// =========================================================
+// SOP 数据库
+// =========================================================
+const SOP_DATA = {
+  T2: {
+    name: 'ITO 空气感双肩包二代（T2）',
+    // 卖点模块（编号体系）
+    modules: [
+      { id:'01', title:'版型气质', desc:'一片式剪裁/挺括不软塌/上身利落', keywords:['挺括','利落','不软塌','一片式'] },
+      { id:'02', title:'配色美学', desc:'低饱和/耐看/松弛/出片', keywords:['低饱和','耐看','松弛','出片'] },
+      { id:'03', title:'Camira面料', desc:'质感/耐磨/高级纹理', keywords:['Camira','质感','耐磨','高级纹理'] },
+      { id:'04', title:'防水防油', desc:'雨天/咖啡/油渍一擦就好', keywords:['防水','防油','一擦','雨天'] },
+      { id:'05', title:'轻量化', desc:'轻负担/背一天不累', keywords:['轻','轻量','不累','轻负担'] },
+      { id:'06', title:'3D加厚肩带', desc:'不勒肩/分压/久背舒服', keywords:['3D肩带','不勒肩','分压','久背'] },
+      { id:'07', title:'双侧开仓', desc:'侧开快取/不翻包/效率', keywords:['侧开','双侧开仓','快取','不翻包'] },
+      { id:'08', title:'能装&分区', desc:'通勤/短途/带娃物品一包搞定', keywords:['能装','分区','一包搞定'] },
+      { id:'09', title:'外侧快取袋', desc:'纸巾/门禁/耳机/充电线随手拿', keywords:['快取袋','随手拿','快取位'] },
+      { id:'10', title:'多场景切换', desc:'通勤→民宿→市集→轻徒步都顺', keywords:['多场景','切换','都顺'] }
+    ],
+    // 人群画像（含推荐卖点）
+    personas: [
+      { name:'高频差旅', desc:'每周出差/机场高铁常客/展会跑腿', sellpoints:['05 轻','06 肩带','07 双侧开仓'] },
+      { name:'通勤精英', desc:'早八/写字楼/会议密集', sellpoints:['01 版型气质','07 双侧开仓','09 快取袋'] },
+      { name:'整理控', desc:'秩序感/包内必须整齐/取物要快', sellpoints:['08 能装&分区','07 双侧开仓','09 快取袋'] },
+      { name:'颜值党', desc:'不撞款/越看越高级/出片', sellpoints:['02 配色美学','01 版型气质','03 Camira质感'] },
+      { name:'省力党', desc:'背久累/肩颈酸/嫌麻烦', sellpoints:['05 轻','06 3D肩带','10 多场景切换'] },
+      { name:'安全感党', desc:'东西怕丢/重要物品要贴身/不想手忙脚乱', sellpoints:['07 双侧开仓','08 分区','01 版型挺括'] },
+      { name:'洁癖党', desc:'怕脏/怕雨天溅湿/咖啡油渍焦虑', sellpoints:['04 防水防油','03 Camira耐磨','09 快取位'] }
+    ],
+    // 大场景
+    bigScenes: ['家庭自驾游','精品民宿度假'],
+    // 子场景
+    subScenes: ['通勤','地铁','办公室','出差','旅行','周末出游','商务会议','健身房','自驾','民宿','市集','雨天','咖啡店临时办公','Citywalk'],
+    // 痛点分类
+    pains: {
+      '舒服度': ['肩勒','背久酸','装多压肩','走一天累'],
+      '省心度': ['找东西翻半天','临时要拿纸巾/门禁很狼狈'],
+      '耐脏耐水': ['雨天溅湿','咖啡渍油渍','用久显旧'],
+      '秩序收纳': ['小物件乱滚','包里一团乱','拿取不顺'],
+      '气质违和': ['像学生包/像工具包','上身不体面不松弛'],
+      '场景切换': ['通勤/度假/市集来回切换不协调']
+    },
+    // 情绪词
+    emotions: ['省心','踏实','从容','松弛','高效','品质感','治愈','精致','轻松','自信','安心','舒适']
+  },
+  开心果: {
+    name: 'ITO 开心果行李箱二代',
+    modules: [
+      { id:'01', title:'轻量化', desc:'箱体轻/单手拎不累', keywords:['轻','轻量','不累'] },
+      { id:'02', title:'静音万向轮', desc:'顺滑/静音/推起来丝滑', keywords:['万向轮','静音','顺滑'] },
+      { id:'03', title:'扩容设计', desc:'多层收纳/拉链扩容/装得多', keywords:['扩容','装得多','收纳'] },
+      { id:'04', title:'TSA海关锁', desc:'出国无忧/安全锁具', keywords:['TSA','海关锁','安全'] },
+      { id:'05', title:'硬壳防压', desc:'PC材质/抗压防摔', keywords:['硬壳','抗压','防摔','PC'] },
+      { id:'06', title:'拉杆顺滑', desc:'多档调节/推拉不卡', keywords:['拉杆','顺滑','多档'] },
+      { id:'07', title:'内部隔层', desc:'X型绑带/拉链隔层/整齐收纳', keywords:['隔层','绑带','整齐'] }
+    ],
+    personas: [
+      { name:'家庭出行', desc:'带娃出游/行李多/要装要稳', sellpoints:['03 扩容','05 硬壳','07 隔层'] },
+      { name:'商务差旅', desc:'频繁出差/机场常客/效率优先', sellpoints:['02 万向轮','06 拉杆','04 TSA锁'] },
+      { name:'留学党', desc:'长途飞行/转机多/东西贵重', sellpoints:['04 TSA锁','05 硬壳','03 扩容'] },
+      { name:'颜值旅行者', desc:'拍照出片/配色好看/有辨识度', sellpoints:['05 硬壳','01 轻量','02 万向轮'] }
+    ],
+    bigScenes: ['长途飞行','自驾游','高铁出行'],
+    subScenes: ['机场','高铁站','酒店','自驾','留学','出差','旅行','家庭出游','购物血拼'],
+    pains: {
+      '装不下': ['行李太多装不下','回来东西更多塞不进','纪念品没地方放'],
+      '不好推': ['轮子卡顿噪音大','拉杆不顺畅','地砖上推着费劲'],
+      '不耐用': ['箱子摔一下就凹','拉链容易坏','用一两次就旧了'],
+      '不安全': ['锁不好用','怕被开箱','贵重东西不放心'],
+      '不好看': ['像地摊货','没有辨识度','拍照不搭']
+    },
+    emotions: ['安心','省心','从容','轻松','高级','品质感','松弛','踏实']
+  }
+};
+
+// =========================================================
+// 状态管理
+// =========================================================
+const state = {
+  videoFile: null,
+  videoDuration: 0,
+  videoWidth: 0,
+  videoHeight: 0,
+  selectedProduct: 'T2',
+  selectedPersona: '',
+  selectedScenes: [],
+  selectedPains: [],
+  selectedModules: [],  // 卖点模块ID列表
+  selectedEmotions: [],
+  selectedTone: '轻熟质感',
+  selectedTemplate: 'template1',
+  templateMode: 'preset',
+  customTemplateText: '',
+  targetWordCount: 100
+};
+
+// =========================================================
+// 动态渲染：根据产品切换所有选项
+// =========================================================
+function renderProductOptions() {
+  const data = SOP_DATA[state.selectedProduct];
+  if (!data) return;
+
+  // 人群画像
+  renderPersonas(data);
+  // 使用场景
+  renderTags('sceneTags', data.subScenes);
+  // 痛点
+  renderPainTags(data);
+  // 卖点模块
+  renderModules(data);
+  // 情绪词
+  renderTags('emotionTags', data.emotions);
+
+  // 重置选择
+  state.selectedPersona = '';
+  state.selectedScenes = [];
+  state.selectedPains = [];
+  state.selectedModules = [];
+  state.selectedEmotions = [];
+}
+
+function renderPersonas(data) {
+  const container = document.getElementById('personaList');
+  container.innerHTML = '';
+  data.personas.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'persona-card';
+    div.dataset.name = p.name;
+    div.innerHTML = `<div class="p-name">${p.name}</div><div class="p-desc">${p.desc}</div><div class="p-sellpoints">推荐卖点：${p.sellpoints.join(' → ')}</div>`;
+    div.addEventListener('click', () => {
+      container.querySelectorAll('.persona-card').forEach(c => c.classList.remove('selected'));
+      div.classList.add('selected');
+      state.selectedPersona = p.name;
+      // 自动推荐卖点模块
+      autoSelectModules(p.sellpoints, data);
+    });
+    container.appendChild(div);
+  });
+}
+
+function autoSelectModules(sellpointNames, data) {
+  // 从推荐卖点文本中提取模块编号
+  state.selectedModules = [];
+  document.querySelectorAll('#moduleList .module-card').forEach(card => card.classList.remove('selected'));
+  
+  sellpointNames.forEach(sp => {
+    const match = sp.match(/^(\d+)/);
+    if (match) {
+      const moduleId = match[1].padStart(2, '0');
+      state.selectedModules.push(moduleId);
+      const card = document.querySelector(`#moduleList .module-card[data-id="${moduleId}"]`);
+      if (card) card.classList.add('selected');
+    }
+  });
+}
+
+function renderTags(containerId, items) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  items.forEach(item => {
+    const span = document.createElement('span');
+    span.className = 'tag';
+    span.dataset.value = item;
+    span.textContent = item;
+    span.addEventListener('click', () => toggleTag(span, containerId));
+    container.appendChild(span);
+  });
+}
+
+function renderPainTags(data) {
+  const container = document.getElementById('painTags');
+  container.innerHTML = '';
+  Object.entries(data.pains).forEach(([category, items]) => {
+    // 分类标签
+    const catLabel = document.createElement('span');
+    catLabel.style.cssText = 'font-size:.75rem;color:#9CA3AF;width:100%;margin-top:6px;margin-bottom:2px';
+    catLabel.textContent = `── ${category} ──`;
+    container.appendChild(catLabel);
+    items.forEach(item => {
+      const span = document.createElement('span');
+      span.className = 'tag';
+      span.dataset.value = item;
+      span.textContent = item;
+      span.addEventListener('click', () => toggleTag(span, 'painTags', 2));
+      container.appendChild(span);
+    });
+  });
+}
+
+function renderModules(data) {
+  const container = document.getElementById('moduleList');
+  container.innerHTML = '';
+  data.modules.forEach(m => {
+    const div = document.createElement('div');
+    div.className = 'module-card';
+    div.dataset.id = m.id;
+    div.innerHTML = `<span class="mod-num">${m.id}</span><span class="mod-title">${m.title}</span><div class="mod-desc">${m.desc}</div>`;
+    div.addEventListener('click', () => {
+      if (div.classList.contains('selected')) {
+        div.classList.remove('selected');
+        state.selectedModules = state.selectedModules.filter(id => id !== m.id);
+      } else {
+        if (state.selectedModules.length >= 3) { showToast('最多选择3个卖点模块'); return; }
+        div.classList.add('selected');
+        state.selectedModules.push(m.id);
+      }
+    });
+    container.appendChild(div);
+  });
+}
+
+function toggleTag(tagEl, containerId, maxSelect) {
+  const stateKeyMap = { 'sceneTags': 'selectedScenes', 'painTags': 'selectedPains', 'emotionTags': 'selectedEmotions' };
+  const stateKey = stateKeyMap[containerId];
+  const val = tagEl.dataset.value;
+
+  if (tagEl.classList.contains('selected')) {
+    tagEl.classList.remove('selected');
+    state[stateKey] = state[stateKey].filter(v => v !== val);
+  } else {
+    if (maxSelect && state[stateKey].length >= maxSelect) { showToast(`最多选择 ${maxSelect} 个`); return; }
+    tagEl.classList.add('selected');
+    state[stateKey].push(val);
+  }
+}
+
+// =========================================================
+// 产品选择
+// =========================================================
+document.getElementById('productGrid').querySelectorAll('.product-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.getElementById('productGrid').querySelectorAll('.product-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    state.selectedProduct = card.dataset.product;
+    renderProductOptions();
+  });
+});
+
+// =========================================================
+// 模板 Tab 切换
+// =========================================================
+document.querySelectorAll('.template-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.template-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.template-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+    state.templateMode = tab.dataset.panel;
+  });
+});
+
+document.getElementById('templateOptions').querySelectorAll('.template-option').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.getElementById('templateOptions').querySelectorAll('.template-option').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    state.selectedTemplate = opt.dataset.value;
+  });
+});
+
+document.getElementById('customTemplateInput').addEventListener('input', e => {
+  state.customTemplateText = e.target.value;
+});
+
+// =========================================================
+// 自定义添加
+// =========================================================
+function addCustomTag(type) {
+  const inputMap = { scene: 'sceneCustomInput', pain: 'painCustomInput', emotion: 'emotionCustomInput' };
+  const containerMap = { scene: 'sceneTags', pain: 'painTags', emotion: 'emotionTags' };
+  const stateKeyMap = { scene: 'selectedScenes', pain: 'selectedPains', emotion: 'selectedEmotions' };
+  const maxMap = { scene: null, pain: 2, emotion: null };
+
+  const input = document.getElementById(inputMap[type]);
+  const container = document.getElementById(containerMap[type]);
+  const stateKey = stateKeyMap[type];
+  const maxSelect = maxMap[type];
+  const val = input.value.trim();
+
+  if (!val) { showToast('请输入内容'); return; }
+  const exists = [...container.querySelectorAll('.tag')].some(t => t.dataset.value === val);
+  if (exists) { showToast('该选项已存在'); input.value = ''; return; }
+  if (maxSelect && state[stateKey].length >= maxSelect) { showToast(`最多选择 ${maxSelect} 个，请先取消已选项`); return; }
+
+  const span = document.createElement('span');
+  span.className = 'tag custom-tag selected';
+  span.dataset.value = val;
+  span.textContent = val;
+  state[stateKey].push(val);
+  span.addEventListener('click', () => {
+    if (span.classList.contains('selected')) {
+      span.classList.remove('selected');
+      state[stateKey] = state[stateKey].filter(v => v !== val);
+    } else {
+      if (maxSelect && state[stateKey].length >= maxSelect) { showToast(`最多选择 ${maxSelect} 个`); return; }
+      span.classList.add('selected');
+      state[stateKey].push(val);
+    }
+  });
+  container.appendChild(span);
+  input.value = '';
+  showToast(`✅ 已添加「${val}」`);
+}
+
+function addCustomPersona() {
+  const input = document.getElementById('personaCustomInput');
+  const val = input.value.trim();
+  if (!val) { showToast('请输入人群名称'); return; }
+
+  const container = document.getElementById('personaList');
+  const exists = [...container.querySelectorAll('.persona-card')].some(c => c.dataset.name === val);
+  if (exists) { showToast('该人群已存在'); input.value = ''; return; }
+
+  const div = document.createElement('div');
+  div.className = 'persona-card selected';
+  div.dataset.name = val;
+  div.innerHTML = `<div class="p-name">${val}</div><div class="p-desc">自定义人群</div>`;
+  container.querySelectorAll('.persona-card').forEach(c => c.classList.remove('selected'));
+  div.addEventListener('click', () => {
+    container.querySelectorAll('.persona-card').forEach(c => c.classList.remove('selected'));
+    div.classList.add('selected');
+    state.selectedPersona = val;
+  });
+  container.appendChild(div);
+  state.selectedPersona = val;
+  input.value = '';
+  showToast(`✅ 已添加人群「${val}」`);
+}
+
+function addCustomModule() {
+  const input = document.getElementById('moduleCustomInput');
+  const val = input.value.trim();
+  if (!val) { showToast('请输入卖点模块'); return; }
+  if (state.selectedModules.length >= 3) { showToast('最多选择3个卖点模块'); return; }
+
+  const container = document.getElementById('moduleList');
+  const div = document.createElement('div');
+  div.className = 'module-card selected';
+  div.dataset.id = 'custom_' + val;
+  div.innerHTML = `<span class="mod-num" style="background:#10B981">★</span><span class="mod-title">${val}</span><div class="mod-desc">自定义卖点</div>`;
+  
+  state.selectedModules.push(div.dataset.id);
+  div.addEventListener('click', () => {
+    if (div.classList.contains('selected')) {
+      div.classList.remove('selected');
+      state.selectedModules = state.selectedModules.filter(id => id !== div.dataset.id);
+    } else {
+      if (state.selectedModules.length >= 3) { showToast('最多选择3个卖点模块'); return; }
+      div.classList.add('selected');
+      state.selectedModules.push(div.dataset.id);
+    }
+  });
+  container.appendChild(div);
+  input.value = '';
+  showToast(`✅ 已添加卖点「${val}」`);
+}
+
+// 回车添加
+['sceneCustomInput','painCustomInput','emotionCustomInput'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addCustomTag(id.replace('CustomInput','')); }
+  });
+});
+document.getElementById('personaCustomInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); addCustomPersona(); }
+});
+document.getElementById('moduleCustomInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); addCustomModule(); }
+});
+
+// =========================================================
+// 调性 & 字数
+// =========================================================
+document.getElementById('toneGrid').querySelectorAll('.tone-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.getElementById('toneGrid').querySelectorAll('.tone-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    state.selectedTone = card.dataset.tone;
+  });
+});
+
+document.getElementById('wordCountBtns').querySelectorAll('.wc-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('wordCountBtns').querySelectorAll('.wc-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    state.targetWordCount = parseInt(btn.dataset.count);
+  });
+});
+
+// =========================================================
+// 视频上传 + 智能分析
+// =========================================================
+const uploadArea = document.getElementById('uploadArea');
+const videoInput = document.getElementById('videoInput');
+uploadArea.addEventListener('click', () => videoInput.click());
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('dragover'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('dragover'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault(); uploadArea.classList.remove('dragover');
+  if (e.dataTransfer.files[0]?.type.startsWith('video/')) handleVideoUpload(e.dataTransfer.files[0]);
+});
+videoInput.addEventListener('change', e => { if (e.target.files[0]) handleVideoUpload(e.target.files[0]); });
+
+function handleVideoUpload(file) {
+  state.videoFile = file;
+  const url = URL.createObjectURL(file);
+  const video = document.getElementById('previewVideo');
+  video.src = url;
+  document.getElementById('videoPreview').style.display = 'block';
+
+  video.onloadedmetadata = () => {
+    state.videoDuration = video.duration;
+    state.videoWidth = video.videoWidth;
+    state.videoHeight = video.videoHeight;
+    const m = Math.floor(video.duration / 60), s = Math.floor(video.duration % 60);
+    document.getElementById('videoInfo').textContent = `${file.name} | 时长：${m}分${s}秒 | 大小：${(file.size/1024/1024).toFixed(2)}MB | 分辨率：${video.videoWidth}×${video.videoHeight}`;
+
+    // 执行智能分析
+    analyzeVideo(file, video);
+  };
+}
+
+function analyzeVideo(file, video) {
+  const duration = video.duration;
+  const w = video.videoWidth, h = video.videoHeight;
+  const ratio = w / h;
+
+  // 分析标签
+  let badges = '';
+  // 时长分析
+  if (duration <= 15) {
+    badges += '<span class="analysis-badge orange">⚡ 超短视频（≤15秒）</span>';
+  } else if (duration <= 30) {
+    badges += '<span class="analysis-badge green">✅ 理想时长（15-30秒）</span>';
+  } else if (duration <= 60) {
+    badges += '<span class="analysis-badge blue">📺 中等时长（30-60秒）</span>';
+  } else {
+    badges += '<span class="analysis-badge orange">⚠️ 偏长（>60秒），建议裁剪</span>';
+  }
+
+  // 画面比例
+  if (ratio >= 0.7 && ratio <= 0.85) {
+    badges += '<span class="analysis-badge green">📱 竖屏9:16，适合短视频平台</span>';
+  } else if (ratio >= 1.7 && ratio <= 2.0) {
+    badges += '<span class="analysis-badge blue">🖥️ 横屏16:9，需裁剪适配竖屏</span>';
+  } else if (ratio >= 0.95 && ratio <= 1.05) {
+    badges += '<span class="analysis-badge orange">📐 方形1:1，可适配但非最佳</span>';
+  } else {
+    badges += `<span class="analysis-badge purple">📐 自定义比例 ${w}×${h}</span>`;
+  }
+
+  // 文件大小
+  const sizeMB = file.size / 1024 / 1024;
+  if (sizeMB > 50) {
+    badges += '<span class="analysis-badge orange">💾 文件较大（>50MB），建议压缩</span>';
+  }
+
+  document.getElementById('analysisBadges').innerHTML = badges;
+
+  // 生成智能建议
+  let suggest = '<strong>💡 智能剪辑建议：</strong><br>';
+
+  // 根据时长推荐字数
+  if (duration <= 15) {
+    suggest += '• 视频较短，建议选择 <strong>约60字</strong> 口播脚本，语速快节奏<br>';
+    state.targetWordCount = 60;
+    updateWordCountBtn(60);
+  } else if (duration <= 30) {
+    suggest += '• 视频时长适中，建议选择 <strong>约80-100字</strong> 口播脚本<br>';
+  } else if (duration <= 60) {
+    suggest += '• 视频偏长，建议选择 <strong>约150-200字</strong> 口播脚本，需要更多内容支撑<br>';
+  } else {
+    suggest += '• 视频超过60秒，建议裁剪至60秒内，或选择 <strong>约200字</strong> 口播脚本<br>';
+  }
+
+  // 根据画面比例建议
+  if (ratio > 1.2) {
+    suggest += '• 横屏视频，发布到抖音/快手需<strong>裁剪为竖屏</strong>，或添加背景模糊效果<br>';
+  }
+
+  // 根据时长推荐模板
+  if (duration <= 20) {
+    suggest += '• 短时长适合 <strong>模板1（场景→卖点→CTA）</strong>，节奏快、直入主题<br>';
+  } else if (duration <= 40) {
+    suggest += '• 中等时长适合 <strong>模板2（痛点→对比→解决方案）</strong>，有空间展开对比<br>';
+  } else {
+    suggest += '• 较长时长适合 <strong>模板3（反转式）</strong> 或 <strong>模板4（教程式）</strong>，有空间讲故事<br>';
+  }
+
+  // 通用建议
+  suggest += '• 前3秒必须有<strong>视觉冲击或悬念钩子</strong>，否则用户会划走<br>';
+  suggest += '• 字幕放在画面<strong>中间偏下安全区</strong>，避免被平台UI遮挡';
+
+  document.getElementById('analysisSuggest').innerHTML = suggest;
+  document.getElementById('videoAnalysis').classList.add('show');
+}
+
+function updateWordCountBtn(count) {
+  document.getElementById('wordCountBtns').querySelectorAll('.wc-btn').forEach(b => {
+    b.classList.toggle('selected', parseInt(b.dataset.count) === count);
+  });
+  state.targetWordCount = count;
+}
+
+// =========================================================
+// 核心生成逻辑
+// =========================================================
+const toneVoice = {
+  '轻熟质感': {
+    opener: {
+      T2: ['说真的，','用了这么久，','作为一个每天通勤的人，','有些东西用了才知道值，'],
+      开心果: ['说真的，','用了这么久，','作为一个经常出行的人，','有些东西用了才知道值，']
+    },
+    accentColor: '#000000',
+    bgColors: ['#F8F6F3','#F5F3F0']
+  },
+  '活力青春': {
+    opener: {
+      T2: ['姐妹们！','绝绝子！这个包！','啊啊啊！发现宝了！','拍下来必须分享！'],
+      开心果: ['姐妹们！','绝绝子！这个箱子！','啊啊啊！发现宝了！','拍下来必须分享！']
+    },
+    accentColor: '#0075B3',
+    bgColors: ['#E8F4FC','#D6EBF7']
+  },
+  '专业靠谱': {
+    opener: {
+      T2: ['从实测角度来说，','对比了三款之后，','数据不说谎，','今天给大家做个客观测评，'],
+      开心果: ['从实测角度来说，','对比了三款之后，','数据不说谎，','今天给大家做个客观测评，']
+    },
+    accentColor: '#0075B3',
+    bgColors: ['#E8F4FC','#D6EBF7']
+  },
+  '温暖治愈': {
+    opener: {
+      T2: ['有一种包，','生活里有些小事会让你很开心，','今天想分享一个小发现，','每次背上它，都觉得'],
+      开心果: ['有一种箱子，','生活里有些小事会让你很开心，','今天想分享一个小发现，','每次用它，都觉得']
+    },
+    accentColor: '#000000',
+    bgColors: ['#F8F6F3','#F5F3F0']
+  }
+};
+
+function getModuleNames(moduleIds) {
+  const data = SOP_DATA[state.selectedProduct];
+  return moduleIds.map(id => {
+    const mod = data.modules.find(m => m.id === id);
+    if (mod) return mod.title;
+    // 自定义模块
+    if (id.startsWith('custom_')) return id.replace('custom_','');
+    return id;
+  });
+}
+
+function getModuleKeywords(moduleIds) {
+  const data = SOP_DATA[state.selectedProduct];
+  const kws = [];
+  moduleIds.forEach(id => {
+    const mod = data.modules.find(m => m.id === id);
+    if (mod) kws.push(...mod.keywords);
+  });
+  return kws;
+}
+
+function buildScript(params) {
+  const { product, persona, scenes, pains, moduleNames, emotions, activity, tone, wordCount, templateMode, customTemplate, templateKey } = params;
+  const tv = toneVoice[tone];
+  const openerPool = tv.opener[state.selectedProduct] || tv.opener['T2'];
+  const opener = openerPool[Math.floor(Math.random() * openerPool.length)];
+  const sceneStr = scenes.slice(0, 2).join('、');
+  const painStr = pains.join('、');
+  const sellStr = moduleNames.slice(0, 3).join('、');
+  const emotionStr = emotions.slice(0, 2).join('、');
+  const activityPart = activity ? `现在${activity}，` : '';
+
+  // 按产品类型区分用词
+  const isLuggage = state.selectedProduct === '开心果';
+  const noun = isLuggage ? '箱子' : '包';           // 简称
+  const nounFull = isLuggage ? '行李箱' : '双肩包';  // 全称
+  const verb = isLuggage ? '用' : '背';              // 动作
+  const verbPast = isLuggage ? '用' : '背了';        // 过去式
+
+  // 钩子（按产品类型区分）
+  const hookMap = isLuggage ? {
+    template1: [`每次${sceneStr}，箱子不是装不下就是不好推？`, `终于找到一款${sceneStr}好用的箱子了`, `${painStr}？这个箱子专门为你设计`],
+    template2: [`为什么别人的箱子推着丝滑，你的却像在推磨？`, `${painStr}——换了这个箱子，全解决了`, `对比了五款箱子，只有这款让我心动`],
+    template3: [`这个箱子，我本来觉得不会好用……`, `买之前还犹豫，用完之后真香`, `朋友说这箱子看着普通，结果他自己也买了`],
+    template4: [`选${sceneStr}箱子，看这三点就够了`, `30秒教你挑对行李箱，别再踩坑`, `内行人选箱子，只看这几个关键`],
+    template5: [`短途选小箱，长途选大箱，这个箱子太懂了`, `一个系列多种尺寸，覆盖你所有出行场景`, `纠结选多大？看完这个你就知道`]
+  } : {
+    template1: [`在${sceneStr}的路上，你的肩膀还好吗？`, `每天${sceneStr}，我终于找到这款包了`, `${painStr}？这个包专门为你设计`],
+    template2: [`为什么别人的包背一天都不累，你的不行？`, `${painStr}——这些问题，一个包全解决了`, `对比了五款包，只有这款让我真的心动`],
+    template3: [`这个包，我本来想退货的……`, `买之前觉得贵，用完之后真香`, `同事说这包看着普通，结果他自己也买了`],
+    template4: [`选${sceneStr}包，看这三点就够了`, `30秒教你挑对通勤包，别再踩坑`, `内行人选包，只看这几个关键`],
+    template5: [`日常用小的，出差选大的，这款包设计太懂了`, `一个产品两种尺寸，覆盖你所有场景`, `纠结尺寸？看完这个你就知道怎么选`]
+  };
+  const hooks = hookMap[templateKey] || hookMap.template1;
+  const hook = hooks[Math.floor(Math.random() * hooks.length)];
+
+  // 正文
+  let script = '';
+  if (templateMode === 'custom' && customTemplate && customTemplate.trim().length > 10) {
+    script = buildCustomScript(customTemplate, { product, persona, scenes, pains, moduleNames, emotions, activity, opener, noun, verb });
+  } else {
+    script = buildPresetScript(templateKey, { product, persona, sceneStr, painStr, sellStr, emotionStr, activityPart, opener, wordCount, noun, nounFull, verb, verbPast });
+  }
+
+  // 严格控字数
+  script = adjustWordCount(script, wordCount, { product, persona, sceneStr, painStr, sellStr, emotionStr, activityPart, opener, noun, nounFull, verb, verbPast });
+
+  // CTA（按产品类型区分）
+  const ctaMap = isLuggage ? {
+    template1: [`点击下方链接，${emotionStr}出行从这里开始`, `现在下单，${activityPart}别错过`, `评论区说说你的${sceneStr}经历`, `同款链接在左下角，自取`, `${persona || '你'}必看，点进去就懂了`],
+    template2: [`告别${painStr}，从这款箱子开始`, `对比过才知道，这个真的值`, `限时福利，错过再等一年`, `不信？点进去看真实评价`, `${persona || '你'}专属推荐，冲！`],
+    template3: [`真香警告，${persona || '你'}自检一下`, `试试又不亏，不满意直接退`, `评论区说说你的真香时刻`, `点击了解，也许你也会真香`, `真香现场，点进来看更多`],
+    template4: [`选购指南收好，下单不犹豫`, `按这个标准选箱子，准没错`, `更多攻略，关注我不迷路`, `链接在左下角，拿走不谢`, `${persona || '你'}看完这个再买，真的不亏`],
+    template5: [`进来挑你的专属尺寸`, `尺寸指南在详情页，去看看`, `限时赠品，下单即享`, `不知道选哪个？问我或问客服`, `${persona || '你'}用哪款？评论区说说`]
+  } : {
+    template1: [`点击下方链接，${emotionStr}生活从这里开始`, `现在下单，${activityPart}别错过`, `评论区说说你的${sceneStr}故事`, `同款链接在左下角，自取`, `${persona || '你'}必看，点进去就懂了`],
+    template2: [`告别${painStr}，从这款包开始`, `对比过才知道，这个真的值`, `限时福利，错过再等一年`, `不信？点进去看真实评价`, `${persona || '你'}专属推荐，冲！`],
+    template3: [`真香警告，${persona || '你'}自检一下`, `试试又不亏，不满意直接退`, `评论区说说你的真香时刻`, `点击了解，也许你也会真香`, `真香现场，点进来看更多`],
+    template4: [`选购指南收好，下单不犹豫`, `按这个标准选，准没错`, `更多攻略，关注我不迷路`, `链接在左下角，拿走不谢`, `${persona || '你'}看完这个再买，真的不亏`],
+    template5: [`进来挑你的专属尺寸`, `尺寸指南在详情页，去看看`, `限时赠品，下单即享`, `不知道选哪个？问我或问客服`, `${persona || '你'}用哪款？评论区说说`]
+  };
+  const ctas = ctaMap[templateKey] || ctaMap.template1;
+
+  return { hook, script, ctas };
+}
+
+function buildPresetScript(key, p) {
+  const { product, persona, sceneStr, painStr, sellStr, emotionStr, activityPart, opener, wordCount, noun, nounFull, verb, verbPast } = p;
+  const isLuggage = state.selectedProduct === '开心果';
+
+  const blocks = isLuggage ? {
+    template1: [
+      `${opener}每次${sceneStr}，${painStr}，真的太折腾了。`,
+      `直到换了${product}，才算是找到对的箱子了。`,
+      `${sellStr}——这几个点用下来，感受完全不一样。`,
+      `${verb}它${sceneStr}，整个人都${emotionStr}多了。`,
+      `${activityPart}${persona ? persona + '真的可以冲！' : '真的可以冲！'}`
+    ],
+    template2: [
+      `${opener}${painStr}，换过好几款箱子都没解决。`,
+      `如果你是${persona || '经常出行的人'}，每次${sceneStr}都${painStr}，那你一定要看完。`,
+      `${product}解决的就是这个问题。${sellStr}，所以${emotionStr}。`,
+      `同样的行李装进去，推着走的感觉完全不是一个级别。`,
+      `${activityPart}试错成本几乎为零，入！`
+    ],
+    template3: [
+      `${opener}说实话买${product}的时候，我还担心会不会是智商税。`,
+      `结果${verbPast}两次，${painStr}这些问题全消失了。`,
+      `${sellStr}——以为是噱头，没想到是真的好用。`,
+      `现在每次${sceneStr}都${verb}它，整个人都${emotionStr}起来了。`,
+      `${activityPart}${persona || '你'}同款，不买后悔。`
+    ],
+    template4: [
+      `选${sceneStr}${nounFull}，记住三个核心：${sellStr}。`,
+      `${product}三点全中。`,
+      `${painStr}？这款的设计就是针对这个来的。`,
+      `${verb}起来整个人都${emotionStr}，${persona || '你'}用特别合适。`,
+      `${activityPart}按这个标准选，准没错。`
+    ],
+    template5: [
+      `短途${sceneStr}选小箱，长途出行选大箱，${product}多种尺寸都有。`,
+      `${sellStr}——不管哪个尺寸，这些设计都在。`,
+      `${painStr}？全都解决了。`,
+      `${persona || '你'}${verb}起来整个人都${emotionStr}，尺寸按需选，不花冤枉钱。`,
+      `${activityPart}进来挑你的专属版本。`
+    ]
+  } : {
+    template1: [
+      `${opener}在${sceneStr}的路上，${painStr}这件事真的太烦了。`,
+      `直到遇到${product}，才算是找到解了。`,
+      `${sellStr}——这几个点用下来，感受完全不一样。`,
+      `${verb}着它${sceneStr}，整个人都${emotionStr}多了。`,
+      `${activityPart}${persona ? persona + '真的可以冲！' : '真的可以冲！'}`
+    ],
+    template2: [
+      `${opener}${painStr}，换过好几款${noun}都没解决。`,
+      `如果你是${persona || '经常出行的人'}，每次在${sceneStr}都${painStr}，那你一定要看完。`,
+      `${product}解决的就是这个问题。${sellStr}，所以${emotionStr}。`,
+      `同样的东西装进去，背负感完全不是一个级别。`,
+      `${activityPart}试错成本几乎为零，入！`
+    ],
+    template3: [
+      `${opener}说实话买${product}的时候，我还担心是智商税。`,
+      `结果${verbPast}两周，${painStr}这些问题全消失了。`,
+      `${sellStr}——以为是噱头，没想到是真的好用。`,
+      `现在每天${sceneStr}都${verb}它，整个人都${emotionStr}起来了。`,
+      `${activityPart}${persona || '你'}同款，不买后悔。`
+    ],
+    template4: [
+      `选${sceneStr}${noun}，记住三个核心：${sellStr}。`,
+      `${product}三点全中。`,
+      `${painStr}？这款的设计就是针对这个来的。`,
+      `${verb}起来整个人都${emotionStr}，${persona || '你'}用特别合适。`,
+      `${activityPart}按这个标准选，准没错。`
+    ],
+    template5: [
+      `日常${sceneStr}选小尺寸，出差旅行选大尺寸，${product}两种都有。`,
+      `${sellStr}——不管哪个尺寸，这些设计都在。`,
+      `${painStr}？两款都解决了。`,
+      `${persona || '你'}${verb}起来整个人都${emotionStr}，尺寸按需选，不花冤枉钱。`,
+      `${activityPart}进来挑你的专属版本。`
+    ]
+  };
+
+  const sentences = blocks[key] || blocks.template1;
+  return assembleSentences(sentences, wordCount);
+}
+
+function buildCustomScript(template, p) {
+  const { product, persona, scenes, pains, moduleNames, emotions, activity, opener, noun, verb } = p;
+  let script = template
+    .replace(/\[产品\]/g, product)
+    .replace(/\[人群\]/g, persona || '')
+    .replace(/\[场景\]/g, scenes.join('、'))
+    .replace(/\[痛点\]/g, pains.join('、'))
+    .replace(/\[卖点\]/g, moduleNames.join('、'))
+    .replace(/\[情绪\]/g, emotions.join('、'))
+    .replace(/\[活动\]/g, activity || '')
+    .replace(/\[开场\]/g, opener)
+    .replace(/\[简称\]/g, noun || '包')
+    .replace(/\[动词\]/g, verb || '背');
+
+  if (script.trim().length < 30 || script.includes('[→]') || (script.includes('[') && !script.includes('[CTA]'))) {
+    script = `${opener}${pains[0] || '东西太多'}这个问题，${product}彻底解决了。${moduleNames.slice(0,2).join('+')}，在${scenes[0] || '日常'}场景里${verb || '用'}起来真的很${emotions[0] || '省心'}。${activity ? '现在' + activity + '，' : ''}${persona || '你'}闭眼入。`;
+  }
+  return script;
+}
+
+function assembleSentences(sentences, targetCount) {
+  if (targetCount <= 60) return sentences.slice(0, 2).join('') + sentences[sentences.length-1];
+  if (targetCount <= 80) return sentences.slice(0, 3).join('');
+  if (targetCount <= 100) return sentences.slice(0, 4).join('');
+  if (targetCount <= 150) return sentences.join('');
+  return sentences.join('') + '这种感觉，只有用过的人才懂。';
+}
+
+function adjustWordCount(script, target, p) {
+  const current = script.replace(/\s/g, '').length;
+  const tolerance = Math.round(target * 0.15);
+
+  if (current > target + tolerance) {
+    const sentences = script.match(/[^。！？…]+[。！？…]/g) || [script];
+    let result = '', count = 0;
+    for (const s of sentences) {
+      if (count + s.length <= target + tolerance) { result += s; count += s.length; } else break;
+    }
+    if (!result) result = script.substring(0, target + tolerance);
+    return result;
+  }
+
+  if (current < target - tolerance) {
+    const isLuggage = state.selectedProduct === '开心果';
+    const noun = isLuggage ? '箱子' : '包';
+    const verb = isLuggage ? '用' : '背';
+    const additions = [
+      `用了这么久，只想说：真的不踩坑。`,
+      `颜值也在线，${verb}出去回头率也高。`,
+      `做工细节经得起挑剔，摸起来质感很好。`,
+      isLuggage ? `推着走丝滑安静，出差旅行完全不焦虑。` : `不管是晴天还是雨天，防水面料让你放心${verb}。`,
+      `每个口袋都好找，真的省心。`
+    ];
+    let expanded = script;
+    for (const add of additions) {
+      if (expanded.replace(/\s/g,'').length >= target - tolerance) break;
+      const lastPunctIdx = Math.max(expanded.lastIndexOf('！'), expanded.lastIndexOf('。'));
+      if (lastPunctIdx > 0) {
+        expanded = expanded.slice(0, lastPunctIdx + 1) + add + expanded.slice(lastPunctIdx + 1);
+      } else {
+        expanded += add;
+      }
+    }
+    return expanded;
+  }
+
+  return script;
+}
+
+// =========================================================
+// 生成按钮
+// =========================================================
+document.getElementById('generateBtn').addEventListener('click', async () => {
+  const productData = SOP_DATA[state.selectedProduct];
+  const product = productData ? productData.name : document.getElementById('productInput')?.value || state.selectedProduct;
+
+  if (!state.selectedPersona && state.selectedProduct === 'T2') { showToast('请选择目标人群'); return; }
+  if (state.selectedScenes.length === 0) { showToast('请至少选择一个使用场景'); return; }
+  if (state.selectedPains.length === 0) { showToast('请至少选择一个核心痛点'); return; }
+  if (state.selectedModules.length === 0) { showToast('请至少选择一个卖点模块'); return; }
+  if (state.selectedEmotions.length === 0) { showToast('请至少选择一个情绪关键词'); return; }
+  if (state.templateMode === 'custom' && !document.getElementById('customTemplateInput').value.trim()) {
+    showToast('请填写自定义模板内容，或切换到现有模板'); return;
+  }
+
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> 正在智能生成脚本...';
+
+  await new Promise(r => setTimeout(r, 1500));
+
+  const activity = document.getElementById('activityInput').value.trim();
+  const customTemplate = document.getElementById('customTemplateInput').value.trim();
+  const moduleNames = getModuleNames(state.selectedModules);
+
+  const result = buildScript({
+    product,
+    persona: state.selectedPersona,
+    scenes: state.selectedScenes,
+    pains: state.selectedPains,
+    moduleNames,
+    emotions: state.selectedEmotions,
+    activity,
+    tone: state.selectedTone,
+    wordCount: state.targetWordCount,
+    templateMode: state.templateMode,
+    customTemplate,
+    templateKey: state.selectedTemplate
+  });
+
+  let templateDesc = '';
+  if (state.templateMode === 'custom') {
+    templateDesc = '自定义模板（用户自定义结构）';
+  } else {
+    const opt = document.querySelector('.template-option.selected');
+    templateDesc = opt ? opt.dataset.desc : state.selectedTemplate;
+  }
+
+  document.getElementById('templateResult').textContent = templateDesc;
+  document.getElementById('hookResult').textContent = result.hook;
+  document.getElementById('scriptResult').textContent = result.script;
+
+  const actualCount = result.script.replace(/\s/g,'').length;
+  const counter = document.getElementById('charCounter');
+  counter.textContent = `当前字数：${actualCount} 字（目标：约 ${state.targetWordCount} 字，允许±${Math.round(state.targetWordCount*0.15)}字）`;
+  counter.className = 'char-counter ' + (Math.abs(actualCount - state.targetWordCount) <= state.targetWordCount * 0.15 ? 'ok' : 'warning');
+
+  const ctaBox = document.getElementById('ctaResult');
+  ctaBox.innerHTML = '';
+  result.ctas.forEach(cta => {
+    const d = document.createElement('div');
+    d.className = 'cta-option';
+    d.textContent = cta;
+    d.onclick = () => { navigator.clipboard.writeText(cta); showToast('已复制 CTA'); };
+    ctaBox.appendChild(d);
+  });
+
+  renderAnalysis(templateDesc, state.selectedPersona, product, moduleNames);
+  renderStyleRec();
+  renderSubtitles(result.hook, result.script);
+  applyToneTheme();
+
+  document.getElementById('resultSection').classList.add('show');
+  document.getElementById('resultSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  btn.disabled = false;
+  btn.innerHTML = '<span>🚀</span> 重新生成';
+});
+
+// =========================================================
+// 结果渲染
+// =========================================================
+function renderAnalysis(templateDesc, persona, product, moduleNames) {
+  document.getElementById('analysisItems').innerHTML = `
+    <div class="analysis-item"><span class="icon">📦</span><div><div class="label">产品</div><div class="value">${product}</div></div></div>
+    <div class="analysis-item"><span class="icon">📋</span><div><div class="label">模板</div><div class="value">${templateDesc}</div></div></div>
+    <div class="analysis-item"><span class="icon">👥</span><div><div class="label">目标人群</div><div class="value">${persona || '未指定'}</div></div></div>
+    <div class="analysis-item"><span class="icon">📍</span><div><div class="label">使用场景</div><div class="value">${state.selectedScenes.join('、')}</div></div></div>
+    <div class="analysis-item"><span class="icon">😣</span><div><div class="label">核心痛点</div><div class="value">${state.selectedPains.join('、')}</div></div></div>
+    <div class="analysis-item"><span class="icon">✨</span><div><div class="label">卖点模块</div><div class="value">${moduleNames.join('、')}</div></div></div>
+    <div class="analysis-item"><span class="icon">💬</span><div><div class="label">情绪关键词</div><div class="value">${state.selectedEmotions.join('、')}</div></div></div>
+    <div class="analysis-item"><span class="icon">📏</span><div><div class="label">目标字数</div><div class="value">约 ${state.targetWordCount} 字</div></div></div>
+    <div class="analysis-item"><span class="icon">🎨</span><div><div class="label">视频调性</div><div class="value">${state.selectedTone}</div></div></div>
+    <div class="analysis-item"><span class="icon">🎬</span><div><div class="label">视频时长</div><div class="value">${state.videoDuration > 0 ? Math.floor(state.videoDuration) + '秒' : '建议15-60秒'}</div></div></div>
+  `;
+}
+
+function renderStyleRec() {
+  const map = {
+    '轻熟质感': { color:'低饱和度色系、莫兰迪色调（ITO主色黑白灰为主）', music:'Lo-fi / 爵士 / 轻音乐', pace:'中等偏慢，留足呼吸感', font:'思源黑体 Medium（ITO品牌指定中文字体）', tip:'多用自然光，画面干净。字幕出现优雅，不要跳跃。配色以黑白灰为主，睿智蓝点缀。' },
+    '活力青春': { color:'明亮对比、白底+睿智蓝(#0075B3)点缀', music:'电子 / 流行 / 节奏感强', pace:'快节奏，3秒一切换', font:'思源黑体 Bold，字号大', tip:'多用动态转场，配合音乐卡点。主色白+黑+睿智蓝，符合ITO视觉系统。' },
+    '专业靠谱': { color:'黑+白+睿智蓝(#0075B3)，严格遵循ITO VI', music:'轻音乐 / 钢琴曲', pace:'稳定节奏，重点突出', font:'思源黑体 Regular（ITO品牌指定中文字体）', tip:'可用数据图表，画面稳定。配色严格遵循ITO VI：黑#000、白#FFF、灰#EDEFEA、蓝#0075B3。' },
+    '温暖治愈': { color:'暖灰+白、低饱和暖色点缀', music:'民谣 / 自然音效', pace:'舒缓，有故事感', font:'思源黑体 Light / Regular', tip:'多用近景特写，营造亲密感。配色以灰#EDEFEA为底，白为主，黑字点缀。' }
+  };
+  const r = map[state.selectedTone];
+  document.getElementById('styleContent').innerHTML = `
+    <div style="margin-bottom:8px"><strong>🎨 配色方案：</strong>${r.color}</div>
+    <div style="margin-bottom:8px"><strong>🎵 背景音乐：</strong>${r.music}</div>
+    <div style="margin-bottom:8px"><strong>⏱️ 剪辑节奏：</strong>${r.pace}</div>
+    <div style="margin-bottom:8px"><strong>📝 字幕字体：</strong>${r.font}</div>
+    <div style="padding:10px;background:var(--white);border:1px solid var(--gray-200);border-radius:1px;margin-top:8px"><strong>💡 专属建议：</strong>${r.tip}</div>
+  `;
+}
+
+function renderSubtitles(hook, script) {
+  const list = document.getElementById('subtitleList');
+  const sentences = script.match(/[^。！？…]+[。！？…]/g) || [script];
+  let t = 0, html = '';
+
+  html += `<div class="sub-item" style="background:rgba(0,117,179,.15);border-radius:6px;padding:4px 0">
+    <span class="sub-time">00:00</span>
+    <span class="sub-text" style="color:#FFFFFF;font-weight:500">🎣 ${hook}</span>
+  </div>`;
+  t = 3;
+
+  const sellKeywords = getModuleKeywords(state.selectedModules);
+
+  sentences.forEach(s => {
+    const dur = Math.max(2, Math.ceil(s.trim().length / 5));
+    let display = s.trim();
+    sellKeywords.forEach(kw => {
+      if (display.includes(kw)) {
+        display = display.replace(new RegExp(kw, 'g'), `<span style="color:#0075B3;font-weight:500">${kw}</span>`);
+      }
+    });
+    html += `<div class="sub-item"><span class="sub-time">${fmtTime(t)}</span><span class="sub-text">${display}</span></div>`;
+    t += dur;
+  });
+
+  html += `<div class="sub-item" style="opacity:.5"><span class="sub-time">${fmtTime(t)}</span><span class="sub-text">🎯 [CTA + 引导点击]</span></div>`;
+  list.innerHTML = html;
+}
+
+function fmtTime(s) {
+  return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+}
+
+function applyToneTheme() {
+  const tv = toneVoice[state.selectedTone];
+  const card = document.getElementById('resultCard');
+  card.style.background = `linear-gradient(135deg,${tv.bgColors[0]} 0%,${tv.bgColors[1]} 100%)`;
+  document.querySelectorAll('.block-content').forEach(el => { el.style.borderLeftColor = tv.accentColor; });
+  document.getElementById('hookResult').style.color = tv.accentColor;
+  document.querySelectorAll('.block-title').forEach(el => el.style.color = tv.accentColor);
+}
+
+// =========================================================
+// 复制全部
+// =========================================================
+document.getElementById('copyBtn').addEventListener('click', () => {
+  const t = document.getElementById('templateResult').textContent;
+  const h = document.getElementById('hookResult').textContent;
+  const s = document.getElementById('scriptResult').textContent;
+  const text = `【脚本模板】\n${t}\n\n【开头钩子（前3秒）】\n${h}\n\n【口播脚本】\n${s}`;
+  navigator.clipboard.writeText(text).then(() => showToast('✅ 脚本已复制到剪贴板'));
+});
+
+// =========================================================
+// Toast
+// =========================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// =========================================================
+// 初始化：渲染T2产品选项
+// =========================================================
+renderProductOptions();
+
+// =========================================================
+// 模式切换
+// =========================================================
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.mode).classList.add('active');
+  });
+});
+
+// =========================================================
+// 爆款分析引擎
+// =========================================================
+const HOOK_TYPES = {
+  '痛点型': { patterns: [/你是不是也/, /为什么总是/, /每次.*都/, /是不是.*也/, /有没有.*过/], icon: '😣', color: '#DC2626' },
+  '好奇型': { patterns: [/99%的人/, /秘密是/, /你知道吗/, /其实.*不知道/, /没想到/], icon: '🤔', color: '#7C3AED' },
+  '反差型': { patterns: [/原以为是/, /没想到/, /本来.*结果/, /以为.*其实/, /看起来.*实际/], icon: '🔄', color: '#EA580C' },
+  '利益型': { patterns: [/只需.*招/, /一个方法/, /.*搞定/, /.*分钟.*学会/, /.*步.*解决/], icon: '💰', color: '#059669' },
+  '情绪型': { patterns: [/绝绝子/, /天哪/, /太.*了/, /救命/, /啊啊啊/], icon: '😱', color: '#DB2777' }
+};
+
+const STRUCTURE_MODELS = {
+  'SCQA': {
+    name: 'SCQA模型',
+    desc: '情境铺垫 → 冲突/问题 → 核心问题 → 解决方案',
+    steps: ['S(Situation)：情境铺垫', 'C(Complication)：冲突/问题', 'Q(Question)：核心问题', 'A(Answer)：解决方案'],
+    keywords: { S: [/在.*路上/, /每天/, /平时/, /日常/], C: [/但是/, /可是/, /却/, /问题/], Q: [/怎么办/, /如何/, /怎么选/], A: [/直到/, /推荐/, /这款/, /终于/] }
+  },
+  'PREP': {
+    name: 'PREP模型',
+    desc: '观点/结论 → 原因/理由 → 案例/证据 → 重申观点',
+    steps: ['P(Point)：观点/结论', 'R(Reason)：原因/理由', 'E(Example)：案例/证据', 'P(Point)：重申观点'],
+    keywords: { P: [/真的/, /绝了/, /推荐/, /必须/], R: [/因为/, /所以/, /由于/], E: [/比如/, /举个例子/, /实测/], P2: [/总之/, /真的值/, /不后悔/] }
+  },
+  '痛点-方案-证明': {
+    name: '痛点-方案-证明模型',
+    desc: '痛点放大 → 方案呈现 → 效果证明 → 行动号召',
+    steps: ['痛点放大', '方案呈现', '效果证明', '行动号召'],
+    keywords: { pain: [/烦/, /累/, /难/, /痛/, /坑/], solution: [/这款/, /终于/, /推荐/], proof: [/实测/, /用了/, /效果/], cta: [/赶紧/, /冲/, /链接/] }
+  }
+};
+
+const TITLE_FORMULAS = [
+  { type: '痛点型', formula: '「你是不是也...」', example: '你是不是也每次出差箱子都塞不下？' },
+  { type: '好奇型', formula: '「99%的人不知道...」', example: '99%的人不知道行李箱要这样选' },
+  { type: '反差型', formula: '「原以为是...没想到...」', example: '原以为是智商税，用了3天真香了' },
+  { type: '利益型', formula: '「只需X招...」', example: '只需3步，出行打包效率翻倍' },
+  { type: '数据型', formula: '数字+结果/时间', example: '坚持7天，背负感肉眼可见减轻' },
+  { type: '故事型', formula: '结果前置+过程揭秘', example: '从出差苦手到收纳达人，我做对了什么' },
+  { type: '对比型', formula: 'A vs B / 之前 vs 之后', example: '左边是之前，右边是用了这款之后' },
+  { type: '挑战型', formula: '「敢不敢...」「不信你...」', example: '敢不敢试试这款包，看你还愿不愿意换' }
+];
+
+// 分析状态
+const analysisState = {
+  text: '',
+  hookType: '',
+  structureModel: '',
+  emotions: { start: '', mid: '', end: '' },
+  keywords: [],
+  sellpoints: [],
+  importData: null
+};
+
+// 链接解析按钮
+document.getElementById('analyzeLinkBtn').addEventListener('click', () => {
+  const link = document.getElementById('douyinLinkInput').value.trim();
+  if (!link) { showToast('请输入抖音视频链接'); return; }
+  if (!link.includes('douyin.com') && !link.includes('抖音')) { showToast('请输入有效的抖音视频链接'); return; }
+  showToast('抖音链接需通过第三方工具获取数据，请在下方手动输入视频文案');
+  document.getElementById('manualAnalysisInput').focus();
+});
+
+// 开始分析
+document.getElementById('startAnalysisBtn').addEventListener('click', async () => {
+  const text = document.getElementById('manualAnalysisInput').value.trim();
+  if (!text) { showToast('请输入视频文案或字幕内容'); return; }
+  if (text.length < 10) { showToast('内容太短，请输入更完整的视频文案'); return; }
+
+  analysisState.text = text;
+  const btn = document.getElementById('startAnalysisBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> 正在智能分析...';
+
+  await new Promise(r => setTimeout(r, 1800));
+
+  // 执行8维分析
+  analyzeHookType(text);
+  analyzeStructure(text);
+  analyzeQuotes(text);
+  analyzeEmotionCurve(text);
+  analyzeVisualRhythm(text);
+  analyzeSuccessFactors(text);
+  generateGuide(text);
+
+  document.getElementById('analysisReportSection').style.display = 'block';
+  document.getElementById('analysisReportSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  btn.disabled = false;
+  btn.innerHTML = '<span>🔍</span> 重新分析';
+});
+
+// 1. 黄金3秒分析
+function analyzeHookType(text) {
+  const first3s = text.substring(0, Math.min(50, text.length));
+  let detectedType = '痛点型';
+  let maxScore = 0;
+  let typeScores = {};
+
+  for (const [type, config] of Object.entries(HOOK_TYPES)) {
+    let score = 0;
+    config.patterns.forEach(p => { if (p.test(first3s)) score += 2; if (p.test(text.substring(0, 100))) score += 1; });
+    typeScores[type] = score;
+    if (score > maxScore) { maxScore = score; detectedType = type; }
+  }
+
+  analysisState.hookType = detectedType;
+  const hookConfig = HOOK_TYPES[detectedType];
+  const stayRate = detectedType === '痛点型' ? '68-75%' : detectedType === '好奇型' ? '60-70%' : detectedType === '反差型' ? '65-72%' : detectedType === '利益型' ? '55-65%' : '50-60%';
+
+  // 钩子文案提取
+  const firstSentence = text.match(/[^。！？…]+[。！？…]/) || [text.substring(0, 30)];
+  const hookText = firstSentence[0].trim();
+
+  document.getElementById('reportHook').innerHTML = `
+    <h3>🎣 钩子类型识别</h3>
+    <div class="hook-analysis">
+      <span class="hook-type" style="background:${hookConfig.color}">${hookConfig.icon} ${detectedType}</span>
+      <span class="hook-type">停留率预估：${stayRate}</span>
+      <div class="hook-desc" style="margin-top:10px">
+        <strong>前3秒文案：</strong>「${hookText}」<br>
+        <strong>钩子特征：</strong>${getHookDesc(detectedType)}<br>
+        <strong>停留率分析：</strong>${getHookAnalysis(detectedType, hookText)}
+      </div>
+    </div>
+    <h3 style="margin-top:16px">📊 各类型匹配度</h3>
+    <div class="metric-grid">
+      ${Object.entries(typeScores).map(([t, s]) => `
+        <div class="metric-item">
+          <div class="m-label">${HOOK_TYPES[t].icon} ${t}</div>
+          <div class="m-value ${s > 0 ? 'blue' : ''}">${'★'.repeat(Math.min(s, 5))}${'☆'.repeat(Math.max(0, 5 - s))}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function getHookDesc(type) {
+  const descs = {
+    '痛点型': '直接戳中用户痛点，引发「这就是我」的共鸣，最容易产生停留',
+    '好奇型': '制造信息差，激发探索欲，适合知识类/揭秘类内容',
+    '反差型': '打破预期，制造认知冲突，前后的落差感最容易完播',
+    '利益型': '直接给出利益承诺，适合干货类/教程类内容',
+    '情绪型': '用强烈情绪感染用户，适合种草/安利类内容'
+  };
+  return descs[type] || '';
+}
+
+function getHookAnalysis(type, hookText) {
+  const len = hookText.length;
+  if (len <= 15) return '文案精炼，3秒内可说完，节奏好。';
+  if (len <= 25) return '文案稍长，建议语速稍快或精简到15字内。';
+  return '文案偏长，前3秒可能说不完，建议精简开场白。';
+}
+
+// 2. 内容结构拆解
+function analyzeStructure(text) {
+  let bestModel = '痛点-方案-证明';
+  let bestScore = 0;
+  let modelResults = {};
+
+  for (const [key, model] of Object.entries(STRUCTURE_MODELS)) {
+    let score = 0;
+    const kwMap = model.keywords;
+    for (const [step, patterns] of Object.entries(kwMap)) {
+      patterns.forEach(p => { if (p.test(text)) score++; });
+    }
+    modelResults[key] = score;
+    if (score > bestScore) { bestScore = score; bestModel = key; }
+  }
+
+  analysisState.structureModel = bestModel;
+  const selectedModel = STRUCTURE_MODELS[bestModel];
+
+  // 拆解各步骤对应的内容
+  const sentences = text.match(/[^。！？…]+[。！？…]/g) || [text];
+  const stepContents = selectedModel.steps.map((step, i) => {
+    const startIdx = Math.floor(i * sentences.length / selectedModel.steps.length);
+    const endIdx = Math.floor((i + 1) * sentences.length / selectedModel.steps.length);
+    return sentences.slice(startIdx, endIdx).join('');
+  });
+
+  document.getElementById('reportStructure').innerHTML = `
+    <h3>📐 识别的结构模型</h3>
+    <div style="margin-bottom:12px">
+      <span class="structure-model">${selectedModel.name}</span>
+      <span style="font-size:.85rem;color:var(--gray-600)">${selectedModel.desc}</span>
+    </div>
+    ${selectedModel.steps.map((step, i) => `
+      <div class="structure-step">
+        <strong>${step}</strong><br>
+        <span style="font-size:.82rem;color:var(--gray-600)">${stepContents[i] || '（未匹配到对应内容）'}</span>
+      </div>
+    `).join('')}
+    <h3 style="margin-top:16px">📊 各模型匹配度</h3>
+    <div class="metric-grid">
+      ${Object.entries(modelResults).map(([k, s]) => `
+        <div class="metric-item">
+          <div class="m-label">${STRUCTURE_MODELS[k].name}</div>
+          <div class="m-value ${k === bestModel ? 'blue' : ''}">${s} 个特征命中</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// 3. 文案金句
+function analyzeQuotes(text) {
+  const sentences = text.match(/[^。！？…]+[。！？…]/g) || [text];
+  const quotes = [];
+  const emotionWords = ['真的','绝了','太','终于','竟然','居然','必须','再也不会','从此','再也不','神器','宝藏','闭眼入','真的值','不后悔','真香'];
+
+  sentences.forEach(s => {
+    const trimmed = s.trim();
+    if (trimmed.length < 6 || trimmed.length > 40) return;
+    let hasEmotion = false;
+    emotionWords.forEach(w => { if (trimmed.includes(w)) hasEmotion = true; });
+    if (hasEmotion || trimmed.includes('！')) {
+      quotes.push({ text: trimmed, isEmotion: hasEmotion });
+    }
+  });
+
+  if (quotes.length === 0) {
+    sentences.slice(0, 3).forEach(s => {
+      if (s.trim().length >= 6) quotes.push({ text: s.trim(), isEmotion: false });
+    });
+  }
+
+  // 判断文案风格
+  let styleType = '接地气型';
+  if (/数据|实测|对比|测评/.test(text)) styleType = '专业型';
+  else if (/故事|曾经|那时候|后来/.test(text)) styleType = '故事型';
+  else if (/没想到|竟然|真香|绝了/.test(text)) styleType = '反差型';
+
+  document.getElementById('reportQuotes').innerHTML = `
+    <h3>✨ 提取的金句（${quotes.length}句）</h3>
+    ${quotes.slice(0, 5).map(q => `
+      <div class="golden-quote">
+        <span class="gq-tag">${q.isEmotion ? '情绪共鸣' : '信息点'}</span>
+        「${q.text}」
+      </div>
+    `).join('')}
+    <h3 style="margin-top:16px">📝 文案风格判断</h3>
+    <div class="metric-grid">
+      <div class="metric-item"><div class="m-label">文案风格</div><div class="m-value">${styleType}</div></div>
+      <div class="metric-item"><div class="m-label">金句数量</div><div class="m-value">${quotes.length}</div></div>
+      <div class="metric-item"><div class="m-label">情绪共鸣句</div><div class="m-value">${quotes.filter(q => q.isEmotion).length}</div></div>
+      <div class="metric-item"><div class="m-label">平均句长</div><div class="m-value">${Math.round(sentences.reduce((a, s) => a + s.length, 0) / sentences.length)}字</div></div>
+    </div>
+    <div style="margin-top:8px;font-size:.85rem;color:var(--gray-600)">
+      ${quotes.filter(q => q.isEmotion).length >= 2 ? '✅ 金句情绪共鸣感强，易于传播和复述' : '💡 建议增加1-2句情绪共鸣金句，提升传播性'}
+    </div>
+  `;
+}
+
+// 4. 情绪曲线
+function analyzeEmotionCurve(text) {
+  const sentences = text.match(/[^。！？…]+[。！？…]/g) || [text];
+  const total = sentences.length;
+  if (total === 0) return;
+
+  // 情绪关键词库
+  const emotionDict = {
+    '焦虑': ['烦','累','痛','难','怕','愁','崩溃','受不了','太坑'],
+    '好奇': ['？','什么','怎么','为什么','难道','居然'],
+    '认同': ['真的','确实','没错','对','就是','也是'],
+    '期待': ['终于','直到','原来','居然','竟然'],
+    '满足': ['好','棒','值','爽','舒服','省心','踏实','安心','轻松'],
+    '行动': ['赶紧','冲','买','链接','下单','推荐','试试']
+  };
+
+  // 为每句标注情绪
+  const sentenceEmotions = sentences.map(s => {
+    let maxEmotion = '中性';
+    let maxScore = 0;
+    for (const [emo, words] of Object.entries(emotionDict)) {
+      let score = 0;
+      words.forEach(w => { if (s.includes(w)) score++; });
+      if (score > maxScore) { maxScore = score; maxEmotion = emo; }
+    }
+    return maxEmotion;
+  });
+
+  const startEmo = sentenceEmotions[0] || '中性';
+  const midEmo = sentenceEmotions[Math.floor(total / 2)] || '中性';
+  const endEmo = sentenceEmotions[total - 1] || '中性';
+
+  analysisState.emotions = { start: startEmo, mid: midEmo, end: endEmo };
+
+  // 绘制情绪曲线SVG
+  const emoScoreMap = { '焦虑': 20, '好奇': 40, '认同': 50, '中性': 50, '期待': 70, '满足': 80, '行动': 90 };
+  const points = sentenceEmotions.map((e, i) => {
+    const x = (i / Math.max(1, total - 1)) * 100;
+    const y = 100 - (emoScoreMap[e] || 50);
+    return `${x},${y}`;
+  });
+
+  const areaPoints = points.join(' ') + ' 100,100 0,100';
+
+  document.getElementById('reportEmotion').innerHTML = `
+    <h3>💭 情绪走向</h3>
+    <div class="metric-grid" style="margin-bottom:12px">
+      <div class="metric-item"><div class="m-label">开头情绪</div><div class="m-value">${startEmo}</div></div>
+      <div class="metric-item"><div class="m-label">中段情绪</div><div class="m-value">${midEmo}</div></div>
+      <div class="metric-item"><div class="m-label">结尾情绪</div><div class="m-value">${endEmo}</div></div>
+    </div>
+    <div class="emotion-curve">
+      <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+        <polygon points="${areaPoints}" fill="rgba(0,117,179,0.1)" />
+        <polyline points="${points.join(' ')}" fill="none" stroke="#0075B3" stroke-width="2" />
+        ${sentenceEmotions.map((e, i) => {
+          const x = (i / Math.max(1, total - 1)) * 100;
+          const y = 100 - (emoScoreMap[e] || 50);
+          return `<circle cx="${x}" cy="${y}" r="2" fill="#0075B3" />`;
+        }).join('')}
+      </svg>
+    </div>
+    <div style="margin-top:8px;font-size:.82rem;color:var(--gray-400)">横轴：视频进度 ｜ 纵轴：情绪强度</div>
+    <div style="margin-top:8px;font-size:.85rem;color:var(--gray-600)">
+      ${endEmo === '行动' || endEmo === '满足' ? '✅ 情绪曲线收尾有力，用户行动意愿强' : '💡 结尾情绪偏弱，建议加强CTA引导提升行动欲'}
+    </div>
+  `;
+}
+
+// 5. 画面与节奏
+function analyzeVisualRhythm(text) {
+  const sentences = text.match(/[^。！？…]+[。！？…]/g) || [text];
+  const total = sentences.length;
+  const avgLen = sentences.reduce((a, s) => a + s.length, 0) / Math.max(1, total);
+
+  let pace = '中等';
+  if (avgLen <= 10) pace = '快节奏';
+  else if (avgLen >= 25) pace = '慢节奏';
+
+  const hasExclamation = text.includes('！');
+  const hasEllipsis = text.includes('…') || text.includes('……');
+  const hasQuestion = text.includes('？');
+
+  document.getElementById('reportVisual').innerHTML = `
+    <h3>🎬 节奏与画面建议</h3>
+    <div class="metric-grid" style="margin-bottom:12px">
+      <div class="metric-item"><div class="m-label">总句数</div><div class="m-value">${total}</div></div>
+      <div class="metric-item"><div class="m-label">平均句长</div><div class="m-value">${Math.round(avgLen)}字</div></div>
+      <div class="metric-item"><div class="m-label">节奏判断</div><div class="m-value">${pace}</div></div>
+      <div class="metric-item"><div class="m-label">画面切换建议</div><div class="m-value">每${pace === '快节奏' ? '2-3' : pace === '慢节奏' ? '5-6' : '3-5'}秒</div></div>
+    </div>
+    <div style="font-size:.88rem;line-height:1.8;color:var(--dark)">
+      <div style="margin-bottom:6px"><strong>📝 字幕出现时机：</strong>${avgLen <= 15 ? '短句为主，字幕可整句出现' : '长句需分批展示，每行≤12字'}</div>
+      <div style="margin-bottom:6px"><strong>🎵 音效配合：</strong>${hasExclamation ? '感叹号处加强调音效' : '缺少感叹号，可适当加情绪音效'}${hasQuestion ? '；问号处加悬念音效' : ''}${hasEllipsis ? '；省略号处加停顿/过渡音效' : ''}</div>
+      <div><strong>📱 竖屏适配：</strong>核心内容放画面中间安全区，${total <= 4 ? '句数少，每句可配一个场景切换' : '句数多，建议2句一切换保持节奏'}</div>
+    </div>
+  `;
+}
+
+// 6. 爆款成功要素
+function analyzeSuccessFactors(text) {
+  const factors = [];
+
+  // 分析各维度
+  if (analysisState.hookType) {
+    factors.push({ name: `核心钩子：${analysisState.hookType}`, desc: `前3秒使用${analysisState.hookType}策略，有效抓住用户注意力` });
+  }
+  if (analysisState.structureModel) {
+    const model = STRUCTURE_MODELS[analysisState.structureModel];
+    factors.push({ name: `内容结构：${model.name}`, desc: model.desc });
+  }
+
+  const sentences = text.match(/[^。！？…]+[。！？…]/g) || [text];
+  const hasEmotion = ['真的','太','绝了','终于','竟然'].some(w => text.includes(w));
+  if (hasEmotion) factors.push({ name: '情绪设计', desc: '文案中包含情绪触发词，引发用户共鸣和互动' });
+
+  const hasCTA = ['链接','下单','冲','买','试试','推荐','关注'].some(w => text.includes(w));
+  if (hasCTA) factors.push({ name: '明确CTA', desc: '结尾包含行动引导，提升转化率' });
+
+  const avgLen = sentences.reduce((a, s) => a + s.length, 0) / Math.max(1, sentences.length);
+  if (avgLen <= 15) factors.push({ name: '短句节奏', desc: '句式短促有力，适合短视频快节奏叙事' });
+
+  if (factors.length < 3) factors.push({ name: '信息密度', desc: '内容聚焦，卖点信息清晰传达' });
+
+  // 提取关键词
+  const keywords = [];
+  const keywordPatterns = [/[\u4e00-\u9fa5]{2,4}(?:包|箱|肩|轮|轻|防水|分区|容量|质感)/g, /(?:通勤|出差|旅行|出行|背包|行李)/g];
+  keywordPatterns.forEach(p => { let m; while ((m = p.exec(text)) !== null) keywords.push(m[0]); });
+  analysisState.keywords = [...new Set(keywords)];
+
+  document.getElementById('reportFactors').innerHTML = `
+    <h3>🎯 爆款成功要素（${factors.length}个）</h3>
+    <div class="factor-tags">
+      ${factors.map(f => `<span class="factor-tag">${f.name}</span>`).join('')}
+    </div>
+    <div style="margin-top:12px">
+      ${factors.map(f => `
+        <div class="structure-step">
+          <strong>${f.name}</strong><br>
+          <span style="font-size:.82rem;color:var(--gray-600)">${f.desc}</span>
+        </div>
+      `).join('')}
+    </div>
+    ${analysisState.keywords.length > 0 ? `
+    <h3 style="margin-top:16px">🔑 提取的关键词</h3>
+    <div class="factor-tags">
+      ${analysisState.keywords.map(k => `<span class="factor-tag">${k}</span>`).join('')}
+    </div>` : ''}
+  `;
+}
+
+// 7. 创作引导 + 标题生成 + 分镜脚本
+function generateGuide(text) {
+  const isLuggage = text.includes('箱') || text.includes('行李') || text.includes('轮') || text.includes('拉杆');
+  const productType = isLuggage ? '行李箱' : '双肩包';
+  const noun = isLuggage ? '箱子' : '包';
+
+  // 生成8个标题候选
+  const titles = generateTitles(text, productType, noun);
+
+  // 生成15秒分镜脚本
+  const storyboard = generateStoryboard(text, productType, noun);
+
+  document.getElementById('reportGuide').innerHTML = `
+    <h3>📝 候选标题清单</h3>
+    <div style="font-size:.82rem;color:var(--gray-400);margin-bottom:10px">根据视频内容，为你生成以下爆款标题（点击选择）：</div>
+    ${titles.map((t, i) => `
+      <div class="title-candidate" data-idx="${i}">
+        <div class="tc-num">${i + 1}</div>
+        <div class="tc-content">
+          <div class="tc-title">${t.title}</div>
+          <div class="tc-meta">类型：${t.type} ｜ 公式：${t.formula}</div>
+          <div class="tc-reason">爆款理由：${t.reason}</div>
+        </div>
+      </div>
+    `).join('')}
+
+    <h3 style="margin-top:20px">🎬 15秒分镜脚本建议</h3>
+    <table class="storyboard-table">
+      <thead>
+        <tr><th>时间</th><th>画面描述</th><th>字幕/文案</th><th>音效/BGM</th><th>拍摄要点</th></tr>
+      </thead>
+      <tbody>
+        ${storyboard.map(s => `
+          <tr>
+            <td style="white-space:nowrap;font-weight:500">${s.time}</td>
+            <td>${s.visual}</td>
+            <td>${s.subtitle}</td>
+            <td>${s.audio}</td>
+            <td>${s.tip}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+
+    <h3 style="margin-top:20px">🔄 A/B 测试建议</h3>
+    <div class="create-guide">
+      <h4>开头钩子变体</h4>
+      <div class="structure-step"><strong>变体A：</strong>${titles[0]?.title || '痛点型开头'}</div>
+      <div class="structure-step"><strong>变体B：</strong>${titles[1]?.title || '好奇型开头'}</div>
+      <div class="structure-step"><strong>变体C：</strong>${titles[2]?.title || '反差型开头'}</div>
+      <p style="margin-top:8px">💡 建议用不同开头各发一条，观察3秒完播率差异，迭代优化。</p>
+    </div>
+
+    <h3 style="margin-top:20px">📝 发布配置建议</h3>
+    <div class="metric-grid">
+      <div class="metric-item"><div class="m-label">推荐发布时间</div><div class="m-value">18:00-21:00</div></div>
+      <div class="metric-item"><div class="m-label">话题标签</div><div class="m-value" style="font-size:.78rem">#${productType} #好物推荐 #出行必备</div></div>
+      <div class="metric-item"><div class="m-label">封面文字</div><div class="m-value" style="font-size:.78rem">${(titles[0]?.title || '').substring(0, 8)}</div></div>
+      <div class="metric-item"><div class="m-label">首条评论</div><div class="m-value" style="font-size:.78rem">你选哪款？评论区告诉我</div></div>
+    </div>
+  `;
+
+  // 标题点击事件
+  document.querySelectorAll('.title-candidate').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.title-candidate').forEach(e => e.classList.remove('selected'));
+      el.classList.add('selected');
+    });
+  });
+}
+
+function generateTitles(text, productType, noun) {
+  const titles = [];
+  const painWords = (text.match(/(?:烦|累|难|痛|怕|愁|装不下|不好|太重|勒|乱)/g) || []);
+  const sceneWords = (text.match(/(?:通勤|出差|旅行|出行|上班|周末|假日|机场|高铁|办公室|健身)/g) || []);
+  const scene = sceneWords[0] || '日常';
+
+  titles.push({ type: '痛点型', formula: '「你是不是也...」', title: `你是不是也每次${scene}，${painWords[0] || noun + '不给力'}？`, reason: '直接戳中目标用户痛点，引发共鸣停留' });
+  titles.push({ type: '好奇型', formula: '「99%的人不知道...」', title: `99%的人不知道选${noun}要看这个`, reason: '制造信息差，激发用户好奇看完' });
+  titles.push({ type: '反差型', formula: '「原以为是...没想到...」', title: `原以为是智商税，${noun === '箱子' ? '推了两次' : '背了一周'}真香了`, reason: '反差感强，完播率高，容易引发评论互动' });
+  titles.push({ type: '利益型', formula: '「只需X招...」', title: `只需3招，${scene}${noun}不再踩坑`, reason: '利益明确，干货感强，适合教程类内容' });
+  titles.push({ type: '数据型', formula: '数字+结果', title: `坚持用7天，${painWords[0] || '出行体验'}肉眼可见改变`, reason: '数据增加可信度，时间限定制造紧迫感' });
+  titles.push({ type: '故事型', formula: '结果前置+过程', title: `从${painWords[0] || '出行苦手'}到${scene}达人，我做对了什么`, reason: '故事线吸引完播，过程引发好奇' });
+  titles.push({ type: '对比型', formula: 'A vs B', title: `左边是之前，右边是换了这个${noun}之后`, reason: '视觉对比冲击力强，适合做封面' });
+  titles.push({ type: '挑战型', formula: '「敢不敢...」', title: `敢不敢试试这个${noun}，看你还愿不愿意换`, reason: '挑战式表达激发互动欲，评论率提升' });
+
+  return titles;
+}
+
+function generateStoryboard(text, productType, noun) {
+  const sentences = text.match(/[^。！？…]+[。！？…]/g) || [text];
+  const hook = sentences[0]?.trim() || `你的${noun}该换了`;
+  const core = sentences.slice(1, 3).join('') || `${noun}真的很不一样`;
+  const effect = sentences.slice(-2, -1).join('') || '用完真的值';
+  const cta = sentences[sentences.length - 1]?.trim() || '链接在左下角';
+
+  return [
+    { time: '0-3s', visual: '痛点/钩子场景特写', subtitle: hook.substring(0, 15), audio: '悬念音效「叮」', tip: '特写/快切，表情：困惑/惊讶' },
+    { time: '3-8s', visual: `${noun}核心卖点展示过程`, subtitle: core.substring(0, 20), audio: '节奏BGM', tip: '中景/跟拍，动作：演示过程' },
+    { time: '8-12s', visual: '效果呈现/对比', subtitle: effect.substring(0, 15), audio: '高潮音效', tip: '对比/特写，强调变化' },
+    { time: '12-15s', visual: '结尾CTA引导', subtitle: cta.substring(0, 10), audio: '收尾音效', tip: '正面/手势，动作：指向/点头' }
+  ];
+}
+
+// 导入脚本生成
+document.getElementById('importToScriptBtn').addEventListener('click', () => {
+  // 切换到脚本生成模式
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.mode-panel').forEach(p => p.classList.remove('active'));
+  document.querySelector('.mode-tab[data-mode="script"]').classList.add('active');
+  document.getElementById('panel-script').classList.add('active');
+
+  // 根据分析结果自动选择产品
+  const isLuggage = analysisState.text.includes('箱') || analysisState.text.includes('行李') || analysisState.text.includes('轮') || analysisState.text.includes('拉杆');
+  if (isLuggage && state.selectedProduct !== '开心果') {
+    state.selectedProduct = '开心果';
+    document.querySelectorAll('.product-card').forEach(c => c.classList.remove('selected'));
+    document.querySelector('.product-card[data-product="开心果"]').classList.add('selected');
+    renderProductOptions();
+  } else if (!isLuggage && state.selectedProduct !== 'T2') {
+    state.selectedProduct = 'T2';
+    document.querySelectorAll('.product-card').forEach(c => c.classList.remove('selected'));
+    document.querySelector('.product-card[data-product="T2"]').classList.add('selected');
+    renderProductOptions();
+  }
+
+  // 根据钩子类型推荐模板
+  const hookTemplateMap = { '痛点型': 'template2', '好奇型': 'template4', '反差型': 'template3', '利益型': 'template4', '情绪型': 'template1' };
+  const recommendedTemplate = hookTemplateMap[analysisState.hookType] || 'template1';
+  state.selectedTemplate = recommendedTemplate;
+  document.querySelectorAll('.template-option').forEach(o => o.classList.remove('selected'));
+  const targetOpt = document.querySelector(`.template-option[data-value="${recommendedTemplate}"]`);
+  if (targetOpt) targetOpt.classList.add('selected');
+
+  // 根据情绪词自动选择情绪标签
+  const emoTagMap = { '焦虑': ['踏实','安心'], '好奇': ['省心','品质感'], '认同': ['从容','自信'], '期待': ['轻松','省心'], '满足': ['舒适','松弛'], '行动': ['高效','省心'] };
+  const autoEmotions = emoTagMap[analysisState.emotions.end] || ['省心','从容'];
+  autoEmotions.forEach(emo => {
+    const tagEl = document.querySelector(`#emotionTags .tag[data-value="${emo}"]`);
+    if (tagEl && !tagEl.classList.contains('selected')) {
+      tagEl.classList.add('selected');
+      state.selectedEmotions.push(emo);
+    }
+  });
+
+  showToast('✅ 已将分析结果导入脚本配置，请继续选择场景和痛点');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+</script>
+</body>
+</html>
